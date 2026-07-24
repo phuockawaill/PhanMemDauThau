@@ -2307,9 +2307,14 @@ function exportToTxt() {
             });
         } else {
             // Web environment (Vercel) -> Fetch templates.json
-            fetch('templates.json?v=' + new Date().getTime())
+            fetch('templates.json?v=' + Date.now())
                 .then(res => res.json())
                 .then(data => {
+                    // Force fix step 1.1 and 1.2 regardless of JSON data
+                    data.forEach(t => {
+                        if (t.id.includes('1.1._Trinh')) t.stepNum = 1.1;
+                        if (t.id.includes('1.2._Quyet')) t.stepNum = 1.2;
+                    });
                     templates = data;
                     // Sort templates
                     templates.sort((a, b) => {
