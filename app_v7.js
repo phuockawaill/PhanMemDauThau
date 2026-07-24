@@ -2307,7 +2307,7 @@ function exportToTxt() {
             });
         } else {
             // Web environment (Vercel) -> Fetch templates.json
-            fetch('templates.json')
+            fetch('templates.json?v=' + new Date().getTime())
                 .then(res => res.json())
                 .then(data => {
                     templates = data;
