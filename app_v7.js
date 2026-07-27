@@ -2068,6 +2068,19 @@ function exportToTxt() {
         on(portalOpenDirBtn, 'click', handleOpenDirectory);
         on(portalNewPkgBtn, 'click', handleNewPackageClick);
 
+    
+    // Dynamically load Chart.js and SheetJS if missing (Cache busting)
+    if (typeof Chart === 'undefined') {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+        document.head.appendChild(script);
+    }
+    if (typeof XLSX === 'undefined') {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js';
+        document.head.appendChild(script);
+    }
+
     // Ensure Dashboard and Export buttons exist (Cache busting fallback)
     const portalActions = document.querySelector('.portal-actions');
     if (portalActions && !document.getElementById('portal-dashboard-btn')) {
@@ -2126,14 +2139,28 @@ function exportToTxt() {
             }
             if (ds.style.display === 'none' || ds.style.display === '') {
                 ds.style.display = 'block';
-                if (typeof renderDashboard === 'function') renderDashboard();
+                
+                if (typeof renderDashboard === 'function') {
+                    if (typeof Chart === 'undefined') {
+                        setTimeout(renderDashboard, 1000);
+                    } else {
+                        renderDashboard();
+                    }
+                }
+
             } else {
                 ds.style.display = 'none';
             }
         });
 
         exportBtn.addEventListener('click', () => {
+            
+            if (typeof XLSX === 'undefined') {
+                showFloatingNotice('Đang tải công cụ Xuất Excel, vui lòng thử lại sau 2 giây...', 'warning');
+                return;
+            }
             const pkgs = window.allPackages || [];
+
             if (pkgs.length === 0) {
                 showFloatingNotice('Không có dữ liệu để xuất', 'warning');
                 return;
@@ -2168,7 +2195,15 @@ function exportToTxt() {
             const ds = document.getElementById('dashboard-section');
             if (ds.style.display === 'none' || ds.style.display === '') {
                 ds.style.display = 'block';
-                if (typeof renderDashboard === 'function') renderDashboard();
+                
+                if (typeof renderDashboard === 'function') {
+                    if (typeof Chart === 'undefined') {
+                        setTimeout(renderDashboard, 1000);
+                    } else {
+                        renderDashboard();
+                    }
+                }
+
             } else {
                 ds.style.display = 'none';
             }
@@ -2625,7 +2660,13 @@ function exportToTxt() {
     let timeChartInstance = null;
 
     window.renderDashboard = function() {
-        const pkgs = window.allPackages || [];
+        
+            if (typeof XLSX === 'undefined') {
+                showFloatingNotice('Đang tải công cụ Xuất Excel, vui lòng thử lại sau 2 giây...', 'warning');
+                return;
+            }
+            const pkgs = window.allPackages || [];
+
         const total = pkgs.length;
         let completed = 0;
         let ongoing = 0;
@@ -2647,7 +2688,8 @@ function exportToTxt() {
         if (statusChartInstance) statusChartInstance.destroy();
         const ctxStatus = document.getElementById('statusChart');
         if (ctxStatus) {
-            statusChartInstance = new Chart(ctxStatus, {
+            if (typeof Chart !== 'undefined') {
+statusChartInstance = new Chart(ctxStatus, {
                 type: 'doughnut',
                 data: {
                     labels: ['Hoàn thành', 'Đang thực hiện', 'Mới tạo'],
@@ -2665,6 +2707,7 @@ function exportToTxt() {
                     }
                 }
             });
+            }
         }
     };
 
@@ -2674,7 +2717,13 @@ function exportToTxt() {
     const btnExportExcel = document.getElementById('btn-export-excel');
     if (btnExportExcel) {
         btnExportExcel.addEventListener('click', () => {
+            
+            if (typeof XLSX === 'undefined') {
+                showFloatingNotice('Đang tải công cụ Xuất Excel, vui lòng thử lại sau 2 giây...', 'warning');
+                return;
+            }
             const pkgs = window.allPackages || [];
+
             if (pkgs.length === 0) {
                 showFloatingNotice('Không có dữ liệu để xuất', 'warning');
                 return;
