@@ -402,6 +402,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         packageCountText.textContent = `${validPackages.length} gói thầu đã lưu`;
         
+        window.allPackages = validPackages;
         validPackages.sort((a, b) => {
             if (activeSort === 'newest') return (b.updatedAt || 0) - (a.updatedAt || 0);
             if (activeSort === 'oldest') return (a.updatedAt || 0) - (b.updatedAt || 0);
@@ -2487,6 +2488,56 @@ function exportToTxt() {
         // Focus username on load
         setTimeout(() => loginUsernameInput.focus(), 100);
     })();
+    // =========================================================================
+    // DASHBOARD & CHARTS
+    // =========================================================================
+    let statusChartInstance = null;
+    let timeChartInstance = null;
+
+    window.renderDashboard = function() {
+        const pkgs = window.allPackages || [];
+        const total = pkgs.length;
+        let completed = 0;
+        let ongoing = 0;
+        let newPkg = 0;
+
+        const templatesCount = typeof templates !== 'undefined' && templates.length > 0 ? templates.length : 17;
+
+        pkgs.forEach(p => {
+            const c = p.completedSteps ? p.completedSteps.length : 0;
+            if (c >= templatesCount) completed++;
+            else if (c > 0) ongoing++;
+            else newPkg++;
+        });
+
+        document.getElementById('stat-total').textContent = total;
+        document.getElementById('stat-completed').textContent = completed;
+        document.getElementById('stat-ongoing').textContent = ongoing;
+
+        if (statusChartInstance) statusChartInstance.destroy();
+        const ctxStatus = document.getElementById('statusChart');
+        if (ctxStatus) {
+            statusChartInstance = new Chart(ctxStatus, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Hoàn thành', 'Đang thực hiện', 'Mới tạo'],
+                    datasets: [{
+                        data: [completed, ongoing, newPkg],
+                        backgroundColor: ['#10b981', '#f59e0b', '#3b82f6'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#9ca3af' } },
+                        title: { display: true, text: 'Trạng thái Gói thầu', color: '#fff' }
+                    }
+                }
+            });
+        }
+    };
+
 });
 
 
