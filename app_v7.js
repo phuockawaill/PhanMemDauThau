@@ -2067,6 +2067,20 @@ function exportToTxt() {
         // Portal buttons
         on(portalOpenDirBtn, 'click', handleOpenDirectory);
         on(portalNewPkgBtn, 'click', handleNewPackageClick);
+
+    const dashboardBtn = document.getElementById('portal-dashboard-btn');
+    if (dashboardBtn) {
+        dashboardBtn.addEventListener('click', () => {
+            const ds = document.getElementById('dashboard-section');
+            if (ds.style.display === 'none' || ds.style.display === '') {
+                ds.style.display = 'block';
+                if (typeof renderDashboard === 'function') renderDashboard();
+            } else {
+                ds.style.display = 'none';
+            }
+        });
+    }
+
         on(closeNewPkgBtn, 'click', closeNewPackageModal);
         on(cancelNewPkgBtn, 'click', closeNewPackageModal);
         on(confirmNewPkgBtn, 'click', handleConfirmNewPackage);
