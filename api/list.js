@@ -11,13 +11,23 @@ export default async function handler(request, response) {
         await client.connect();
 
         const index = await client.sMembers('pkg_index') || [];
+        const username = request.query.username;
         
         const packages = [];
         for (const id of index) {
             const pkgStr = await client.get(`pkg:${id}`);
             if (pkgStr) {
                 try {
-                    packages.push(JSON.parse(pkgStr));
+                    const pkg = JSON.parse(pkgStr);
+                    // Filter: Admin sees all, normal user sees only theirs
+                    if (username && username !== 'admin') {
+                        // Support legacy packages that have no author by assigning them to admin or visible to all?
+                        // Let's make legacy packages visible only to admin to be safe, or just skip filter if author is missing.
+                        if (pkg.author && pkg.author !== username) {
+                            continue;
+                        }
+                    }
+                    packages.push(pkg);
                 } catch(e) {}
             }
         }

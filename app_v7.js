@@ -374,7 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } else {
             // Online Web Mode - fetch from API
-            fetch('/api/list')
+            fetch('/api/list?username=' + (sessionStorage.getItem('current_username') || ''))
                 .then(res => res.json())
                 .then(data => {
                     if (!data.success || !data.packages || data.packages.length === 0) {
@@ -2468,7 +2468,7 @@ function exportToTxt() {
         }
 
         // Check if already logged in this session (TEMPORARILY DISABLED LOGIN)
-        if (true || sessionStorage.getItem('logged_in') === '1') {
+        if (sessionStorage.getItem('logged_in') === '1') {
             loginScreen.style.display = 'none';
             return;
         }
