@@ -459,6 +459,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
 
                 <div class="pkg-card-footer">
+                                        <button class="btn btn-secondary btn-sm btn-share-pkg" data-path="${escapeHtml(pkg.filePath)}">
+                        <i data-lucide="share-2"></i> Chia sẻ
+                    </button>
                     <button class="btn btn-secondary btn-sm btn-delete-pkg" data-path="${escapeHtml(pkg.filePath)}">
                         <i data-lucide="trash-2"></i> Xóa
                     </button>
@@ -2036,9 +2039,28 @@ function exportToTxt() {
             if (openBtn) {
                 loadPackageFile(openBtn.dataset.path);
             } else if (deleteBtn) {
-                if (confirm('Bạn có chắc chắn muốn xóa gói thầu này khỏi thư viện?\n(Tệp tin gốc trên máy tính vẫn được giữ nguyên)')) {
+                if (confirm('Bạn có chắc chắn muốn xóa gói thầu này khỏi hệ thống?')) {
                     unregisterPackagePath(deleteBtn.dataset.path);
                 }
+            } else if (e.target.closest('.btn-share-pkg')) {
+                const path = e.target.closest('.btn-share-pkg').dataset.path;
+                const targetUser = prompt("Nhập tên tài khoản (username) bạn muốn chia sẻ gói thầu này:");
+                if (!targetUser) return;
+                
+                fetch('/api/share', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: path, shareWith: targetUser })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showFloatingNotice(`Đã chia sẻ thành công cho ${targetUser}!`);
+                    } else {
+                        showFloatingNotice(`Lỗi chia sẻ: ${data.error}`, 'error');
+                    }
+                })
+                .catch(err => showFloatingNotice(`Lỗi kết nối: ${err}`, 'error'));
             }
         });
 
