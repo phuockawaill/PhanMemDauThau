@@ -2434,8 +2434,8 @@ function exportToTxt() {
             }
         }
 
-        // Check if already logged in this session
-        if (sessionStorage.getItem('logged_in') === '1') {
+        // Check if already logged in this session (TEMPORARILY DISABLED LOGIN)
+        if (true || sessionStorage.getItem('logged_in') === '1') {
             loginScreen.style.display = 'none';
             return;
         }
