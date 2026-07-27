@@ -2068,6 +2068,100 @@ function exportToTxt() {
         on(portalOpenDirBtn, 'click', handleOpenDirectory);
         on(portalNewPkgBtn, 'click', handleNewPackageClick);
 
+    // Ensure Dashboard and Export buttons exist (Cache busting fallback)
+    const portalActions = document.querySelector('.portal-actions');
+    if (portalActions && !document.getElementById('portal-dashboard-btn')) {
+        const dashboardBtn = document.createElement('button');
+        dashboardBtn.className = 'btn btn-secondary';
+        dashboardBtn.id = 'portal-dashboard-btn';
+        dashboardBtn.style.marginLeft = '10px';
+        dashboardBtn.innerHTML = '<i data-lucide="bar-chart-2"></i> Thống kê';
+        
+        const exportBtn = document.createElement('button');
+        exportBtn.className = 'btn btn-secondary';
+        exportBtn.id = 'btn-export-excel';
+        exportBtn.style.marginLeft = '10px';
+        exportBtn.innerHTML = '<i data-lucide="download"></i> Xuất Excel';
+        
+        // Insert before change-pwd-btn or at the beginning
+        portalActions.prepend(exportBtn);
+        portalActions.prepend(dashboardBtn);
+        
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+
+        // Attach events
+        dashboardBtn.addEventListener('click', () => {
+            let ds = document.getElementById('dashboard-section');
+            if (!ds) {
+                // Inject dashboard section if HTML is cached
+                ds = document.createElement('div');
+                ds.id = 'dashboard-section';
+                ds.style.marginBottom = '20px';
+                ds.style.display = 'none';
+                ds.innerHTML = `
+                    <div class="stats-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px;">
+                        <div class="stat-card" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); text-align: center;">
+                            <h3 style="color: var(--text-muted); font-size: 13px; margin: 0 0 10px 0;">Tổng số hồ sơ</h3>
+                            <div id="stat-total" style="font-size: 28px; font-weight: 700; color: var(--text-main);">0</div>
+                        </div>
+                        <div class="stat-card" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); text-align: center;">
+                            <h3 style="color: var(--text-muted); font-size: 13px; margin: 0 0 10px 0;">Đã hoàn thành</h3>
+                            <div id="stat-completed" style="font-size: 28px; font-weight: 700; color: var(--success);">0</div>
+                        </div>
+                        <div class="stat-card" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); text-align: center;">
+                            <h3 style="color: var(--text-muted); font-size: 13px; margin: 0 0 10px 0;">Đang thực hiện</h3>
+                            <div id="stat-ongoing" style="font-size: 28px; font-weight: 700; color: var(--warning);">0</div>
+                        </div>
+                    </div>
+                    <div class="charts-grid" style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+                        <div class="chart-container" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); height: 300px; display: flex; justify-content: center;">
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                    </div>
+                `;
+                const mainPortal = document.querySelector('.portal-main');
+                if (mainPortal) {
+                    mainPortal.insertBefore(ds, mainPortal.firstChild);
+                }
+            }
+            if (ds.style.display === 'none' || ds.style.display === '') {
+                ds.style.display = 'block';
+                if (typeof renderDashboard === 'function') renderDashboard();
+            } else {
+                ds.style.display = 'none';
+            }
+        });
+
+        exportBtn.addEventListener('click', () => {
+            const pkgs = window.allPackages || [];
+            if (pkgs.length === 0) {
+                showFloatingNotice('Không có dữ liệu để xuất', 'warning');
+                return;
+            }
+            const data = pkgs.map((pkg, index) => {
+                const total = typeof templates !== 'undefined' && templates.length > 0 ? templates.length : 17;
+                const completedCount = pkg.completedSteps ? pkg.completedSteps.length : 0;
+                let status = 'Mới tạo';
+                if (completedCount >= total) status = 'Hoàn thành';
+                else if (completedCount > 0) status = 'Đang làm';
+                return {
+                    'STT': index + 1,
+                    'Tên gói thầu': pkg.name,
+                    'Người tạo': pkg.author || 'Unknown',
+                    'Tiến độ': `${completedCount}/${total} bước`,
+                    'Trạng thái': status,
+                    'Cập nhật cuối': pkg.updatedAt ? new Date(pkg.updatedAt).toLocaleString('vi-VN') : ''
+                };
+            });
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "DanhSachGoiThau");
+            XLSX.writeFile(wb, "ThongKe_GoiThau.xlsx");
+            showFloatingNotice('Đã xuất file Excel!');
+        });
+    }
+
+
     const dashboardBtn = document.getElementById('portal-dashboard-btn');
     if (dashboardBtn) {
         dashboardBtn.addEventListener('click', () => {
