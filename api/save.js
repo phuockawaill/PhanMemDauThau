@@ -1,4 +1,4 @@
-import { kv } from '@vercel/kv';
+import { createClient } from 'redis';
 
 export default async function handler(request, response) {
     if (request.method !== 'POST') {
@@ -11,15 +11,16 @@ export default async function handler(request, response) {
             return response.status(400).json({ error: 'Missing package data or filePath' });
         }
 
-        const id = packageData.filePath; // We use filePath (e.g. C:/HoSoMuaSam/...) as the ID
-        await kv.set(`pkg:${id}`, packageData);
+        const id = packageData.filePath; 
+        
+        const client = createClient({ url: process.env.REDIS_URL });
+        client.on('error', err => console.log('Redis Client Error', err));
+        await client.connect();
 
-        // Update the index of recent packages
-        let index = await kv.get('pkg_index') || [];
-        if (!index.includes(id)) {
-            index.push(id);
-            await kv.set('pkg_index', index);
-        }
+        await client.set(`pkg:${id}`, JSON.stringify(packageData));
+        await client.sAdd('pkg_index', id); // Use a Set for the index
+
+        await client.disconnect();
 
         return response.status(200).json({ success: true, message: 'Package saved successfully' });
     } catch (error) {

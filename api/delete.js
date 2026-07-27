@@ -1,4 +1,4 @@
-import { kv } from '@vercel/kv';
+import { createClient } from 'redis';
 
 export default async function handler(request, response) {
     if (request.method !== 'POST') {
@@ -11,12 +11,14 @@ export default async function handler(request, response) {
             return response.status(400).json({ error: 'Missing package id' });
         }
 
-        await kv.del(`pkg:${id}`);
+        const client = createClient({ url: process.env.REDIS_URL });
+        client.on('error', err => console.log('Redis Client Error', err));
+        await client.connect();
 
-        // Update the index
-        let index = await kv.get('pkg_index') || [];
-        index = index.filter(pkgId => pkgId !== id);
-        await kv.set('pkg_index', index);
+        await client.del(`pkg:${id}`);
+        await client.sRem('pkg_index', id);
+
+        await client.disconnect();
 
         return response.status(200).json({ success: true, message: 'Package deleted successfully' });
     } catch (error) {

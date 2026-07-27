@@ -1,4 +1,4 @@
-import { kv } from '@vercel/kv';
+import { createClient } from 'redis';
 
 export default async function handler(request, response) {
     if (request.method !== 'GET') {
@@ -6,18 +6,23 @@ export default async function handler(request, response) {
     }
 
     try {
-        const index = await kv.get('pkg_index') || [];
+        const client = createClient({ url: process.env.REDIS_URL });
+        client.on('error', err => console.log('Redis Client Error', err));
+        await client.connect();
+
+        const index = await client.sMembers('pkg_index') || [];
         
-        // Fetch metadata for all packages
         const packages = [];
         for (const id of index) {
-            const pkg = await kv.get(`pkg:${id}`);
-            if (pkg) {
-                // Just return the full package data for simplicity
-                packages.push(pkg);
+            const pkgStr = await client.get(`pkg:${id}`);
+            if (pkgStr) {
+                try {
+                    packages.push(JSON.parse(pkgStr));
+                } catch(e) {}
             }
         }
 
+        await client.disconnect();
         return response.status(200).json({ success: true, packages });
     } catch (error) {
         console.error('Error listing packages:', error);
