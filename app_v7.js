@@ -417,35 +417,47 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         validPackages.forEach(pkg => {
-            const card = document.createElement('div');
-            card.className = 'package-card';
-            
-            const updatedAt = pkg.updatedAt ? new Date(pkg.updatedAt).toLocaleString('vi-VN') : 'Không rõ';
+            const total = typeof templates !== 'undefined' && templates.length > 0 ? templates.length : 17;
             const completedCount = pkg.completedSteps ? pkg.completedSteps.length : 0;
-            const totalCount = templates.length;
-            const progressPct = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+            const pct = Math.round((completedCount / total) * 100) || 0;
+            
+            let badgeClass = 'new';
+            let badgeText = 'Mới tạo';
+            if (completedCount >= total) {
+                badgeClass = 'completed';
+                badgeText = 'Hoàn thành';
+            } else if (completedCount > 0) {
+                badgeClass = 'ongoing';
+                badgeText = 'Đang làm';
+            }
 
+            const filename = pkg.filePath ? pkg.filePath.split(/[\\/]/).pop() : 'Chưa lưu';
+            const updatedAt = pkg.updatedAt ? new Date(pkg.updatedAt).toLocaleDateString('vi-VN') : 'Không rõ';
+
+            const card = document.createElement('div');
+            card.className = `pkg-card ${badgeClass}`;
             card.innerHTML = `
-                <div class="package-header">
-                    <div class="package-icon">
-                        <i data-lucide="box"></i>
-                    </div>
-                    <div class="package-info">
-                        <h3 class="package-name" title="${escapeHtml(pkg.name)}">${escapeHtml(pkg.name)}</h3>
-                        <div class="package-meta">
-                            <span><i data-lucide="clock"></i> ${updatedAt}</span>
-                            <span><i data-lucide="check-circle-2"></i> ${completedCount}/${totalCount} bước</span>
-                        </div>
+                <div class="pkg-card-header">
+                    <span class="pkg-badge ${badgeClass}">${badgeText}</span>
+                    <div class="pkg-card-meta-item">
+                        <i data-lucide="clock"></i>
+                        <span>${updatedAt}</span>
                     </div>
                 </div>
+                <h3 class="pkg-card-title">${escapeHtml(pkg.name)}</h3>
+                <div class="pkg-card-filename">${escapeHtml(filename)}</div>
                 
-                <div class="package-progress">
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: ${progressPct}%"></div>
+                <div class="pkg-progress-container">
+                    <div class="pkg-card-meta" style="justify-content: space-between; margin-top: 0;">
+                        <span>Tiến độ</span>
+                        <strong>${completedCount}/${total} bước (${pct}%)</strong>
+                    </div>
+                    <div class="pkg-progress-bar">
+                        <div class="pkg-progress-fill" style="width: ${pct}%"></div>
                     </div>
                 </div>
 
-                <div class="package-actions">
+                <div class="pkg-card-footer">
                     <button class="btn btn-secondary btn-sm btn-delete-pkg" data-path="${escapeHtml(pkg.filePath)}">
                         <i data-lucide="trash-2"></i> Xóa
                     </button>
