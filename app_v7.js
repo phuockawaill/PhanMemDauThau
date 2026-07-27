@@ -328,6 +328,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const paths = JSON.parse(localStorage.getItem('agy-recent-packages') || '[]');
         const updated = paths.filter(p => p !== path);
         localStorage.setItem('agy-recent-packages', JSON.stringify(updated));
+        
+        // Also remove from app_packages
+        try {
+            let pkgs = JSON.parse(localStorage.getItem('app_packages')) || {};
+            if (pkgs[path]) {
+                delete pkgs[path];
+                localStorage.setItem('app_packages', JSON.stringify(pkgs));
+            }
+        } catch(e) {}
+        
         renderPortalPackages();
     }
 
@@ -366,17 +376,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     return { path, error: err };
                 });
             } else {
-                // Fallback mock values for browser sandbox testing
-                return Promise.resolve({
-                    path,
-                    data: {
-                        name: path.split('/').pop().replace('.hsmsam', ''),
-                        filePath: path,
-                        currentStepIndex: 3,
-                        updatedAt: Date.now() - 1000 * 3600,
-                        completedSteps: ['local-1.1._Trinh_phe_duyet_chu_truong_va_du_kien_kinh_phi_QTRG', 'local-1.2._Quyet_dinh_phe_duyet_chu_truong_va_du_kien_kinh_phi_QTRG']
-                    }
-                });
+                // Load from localStorage for web mode
+                let pkgs = {};
+                try { pkgs = JSON.parse(localStorage.getItem('app_packages')) || {}; } catch(e){}
+                if (pkgs[path]) {
+                    return Promise.resolve({ path, data: pkgs[path] });
+                } else {
+                    return Promise.resolve({ path, error: "Khong tim thay tap tin goi thau." });
+                }
             }
         });
 
@@ -574,12 +581,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     registerPackagePath(path);
                     openWorkspace(parsed);
-                } catch(e) {
+} catch(e) {
                     showFloatingNotice("Giải mã tệp tin thất bại.", 'error');
                 }
             });
         } else {
-            showFloatingNotice("Môi trường trình duyệt giả lập.", 'error');
+            let pkgs = {};
+            try { pkgs = JSON.parse(localStorage.getItem('app_packages')) || {}; } catch(e){}
+            if (pkgs[path]) {
+                registerPackagePath(path);
+                openWorkspace(pkgs[path]);
+            } else {
+                showFloatingNotice("Khong tim thay du lieu goi thau trong bo nho trinh duyet.", 'error');
+            }
         }
     }
 
