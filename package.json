@@ -1,0 +1,12 @@
+{
+  "name": "phan-mem-dau-thau",
+  "version": "1.0.0",
+  "description": "Phan Mem Dau Thau on Vercel",
+  "main": "app_v7.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@vercel/kv": "^3.0.0"
+  }
+}

@@ -315,164 +315,148 @@ document.addEventListener('DOMContentLoaded', () => {
     // Save a path to recent packages registry
     function registerPackagePath(path) {
         if (!path) return;
-        const paths = JSON.parse(localStorage.getItem('agy-recent-packages') || '[]');
-        if (!paths.includes(path)) {
-            paths.unshift(path); // Add to beginning
-            localStorage.setItem('agy-recent-packages', JSON.stringify(paths));
+        // In web mode, registration is implicit via save_package API
+        if (window.pywebview && window.pywebview.api) {
+            const paths = JSON.parse(localStorage.getItem('agy-recent-packages') || '[]');
+            if (!paths.includes(path)) {
+                paths.unshift(path);
+                localStorage.setItem('agy-recent-packages', JSON.stringify(paths));
+            }
         }
         renderPortalPackages();
     }
 
     // Unregister path from recent list
     function unregisterPackagePath(path) {
-        const paths = JSON.parse(localStorage.getItem('agy-recent-packages') || '[]');
-        const updated = paths.filter(p => p !== path);
-        localStorage.setItem('agy-recent-packages', JSON.stringify(updated));
-        
-        // Also remove from app_packages
-        try {
-            let pkgs = JSON.parse(localStorage.getItem('app_packages')) || {};
-            if (pkgs[path]) {
-                delete pkgs[path];
-                localStorage.setItem('app_packages', JSON.stringify(pkgs));
-            }
-        } catch(e) {}
-        
-        renderPortalPackages();
+        if (window.pywebview && window.pywebview.api) {
+            fetch('/api/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: path })
+            }).then(() => renderPortalPackages()).catch(e => console.error(e));
+        } else {
+            fetch('/api/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: path })
+            }).then(() => renderPortalPackages()).catch(e => console.error(e));
+        }
     }
 
     // Render packages list in the library dashboard
     function renderPortalPackages() {
         packagesContainer.innerHTML = '';
-        const paths = JSON.parse(localStorage.getItem('agy-recent-packages') || '[]');
-        let count = 0;
-
-        if (paths.length === 0) {
-            packagesContainer.innerHTML = `
-                <div class="empty-state" style="grid-column: 1/-1; padding: 40px; text-align: center; color: var(--text-muted);">
-                    <i data-lucide="folder-search" style="width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.5;"></i>
-                    <p>Thư viện trống. Hãy tạo gói mới hoặc mở tệp tin từ máy tính!</p>
-                </div>
-            `;
-            packageCountText.textContent = `0 gói thầu đã lưu`;
-            lucide.createIcons();
-            return;
-        }
-
-        // We load each file metadata asynchronously
-        const promises = paths.map(path => {
-            if (window.pywebview && window.pywebview.api) {
+        
+        if (window.pywebview && window.pywebview.api) {
+            const paths = JSON.parse(localStorage.getItem('agy-recent-packages') || '[]');
+            if (paths.length === 0) {
+                packagesContainer.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1; padding: 40px; text-align: center; color: var(--text-muted);">
+                        <i data-lucide="folder-search" style="width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.5;"></i>
+                        <p>Thư viện trống. Hãy tạo gói mới hoặc mở tệp tin từ máy tính!</p>
+                    </div>
+                `;
+                packageCountText.textContent = `0 gói thầu đã lưu`;
+                lucide.createIcons();
+                return;
+            }
+            const promises = paths.map(path => {
                 return window.pywebview.api.load_package(path).then(jsonStr => {
                     try {
                         const parsed = JSON.parse(jsonStr);
-                        if (parsed.error) {
-                            return { path, error: parsed.error };
-                        }
+                        if (parsed.error) return { path, error: parsed.error };
                         return { path, data: parsed };
-                    } catch(e) {
-                        return { path, error: "Lỗi giải mã cấu trúc file." };
-                    }
-                }).catch(err => {
-                    return { path, error: err };
-                });
-            } else {
-                // Load from localStorage for web mode
-                let pkgs = {};
-                try { pkgs = JSON.parse(localStorage.getItem('app_packages')) || {}; } catch(e){}
-                if (pkgs[path]) {
-                    return Promise.resolve({ path, data: pkgs[path] });
-                } else {
-                    return Promise.resolve({ path, error: "Khong tim thay tap tin goi thau." });
-                }
-            }
-        });
-
-        Promise.all(promises).then(results => {
-            let activeFilter = document.querySelector('.filter-item.active').dataset.filter;
-            let activeSort = document.querySelector('.filter-item.active').dataset.sort || 'newest';
-
-            // Filter out errors
-            let validPackages = results.filter(r => {
-                if (r.error) {
-                    unregisterPackagePath(r.path); // remove dead references
-                    return false;
-                }
-                return true;
-            }).map(r => r.data);
-
-            // Apply filter
-            if (activeFilter === 'completed') {
-                validPackages = validPackages.filter(p => p.completedSteps && p.completedSteps.length === 17);
-            } else if (activeFilter === 'ongoing') {
-                validPackages = validPackages.filter(p => p.completedSteps && p.completedSteps.length > 0 && p.completedSteps.length < 17);
-            } else if (activeFilter === 'new') {
-                validPackages = validPackages.filter(p => !p.completedSteps || p.completedSteps.length === 0);
-            }
-
-            // Apply sort
-            if (activeSort === 'alphabetical') {
-                validPackages.sort((a, b) => a.name.localeCompare(b.name));
-            } else if (activeSort === 'progress') {
-                validPackages.sort((a, b) => (b.completedSteps ? b.completedSteps.length : 0) - (a.completedSteps ? a.completedSteps.length : 0));
-            } else {
-                validPackages.sort((a, b) => b.updatedAt - a.updatedAt);
-            }
-
-            packageCountText.textContent = `${validPackages.length} gói thầu đã lưu`;
-
-            validPackages.forEach(pkg => {
-                const total = 17;
-                const completedCount = pkg.completedSteps ? pkg.completedSteps.length : 0;
-                const pct = Math.round((completedCount / total) * 100);
-                
-                let badgeClass = 'new';
-                let badgeText = 'Mới tạo';
-                if (completedCount === total) {
-                    badgeClass = 'completed';
-                    badgeText = 'Hoàn thành';
-                } else if (completedCount > 0) {
-                    badgeClass = 'ongoing';
-                    badgeText = 'Đang làm';
-                }
-
-                const filename = pkg.filePath ? pkg.filePath.split(/[\\/]/).pop() : 'Chưa lưu';
-
-                const card = document.createElement('div');
-                card.className = `pkg-card ${badgeClass}`;
-                card.innerHTML = `
-                    <div class="pkg-card-header">
-                        <span class="pkg-badge ${badgeClass}">${badgeText}</span>
-                        <div class="pkg-card-meta-item">
-                            <i data-lucide="clock"></i>
-                            <span>${new Date(pkg.updatedAt).toLocaleDateString('vi-VN')}</span>
-                        </div>
-                    </div>
-                    <h3 class="pkg-card-title">${escapeHtml(pkg.name)}</h3>
-                    <div class="pkg-card-filename">${escapeHtml(filename)}</div>
-                    
-                    <div class="pkg-progress-container">
-                        <div class="pkg-card-meta" style="justify-content: space-between; margin-top: 0;">
-                            <span>Tiến độ</span>
-                            <strong>${completedCount}/${total} bước (${pct}%)</strong>
-                        </div>
-                        <div class="pkg-progress-bar">
-                            <div class="pkg-progress-fill" style="width: ${pct}%"></div>
-                        </div>
-                    </div>
-
-                    <div class="pkg-card-footer">
-                        <button class="btn btn-secondary btn-sm btn-delete-pkg" data-path="${escapeHtml(pkg.filePath)}">
-                            <i data-lucide="trash-2"></i> Xóa
-                        </button>
-                        <button class="btn btn-primary btn-sm btn-open-pkg" data-path="${escapeHtml(pkg.filePath)}">
-                            <i data-lucide="arrow-right"></i> ${completedCount > 0 ? 'Tiếp tục' : 'Mở'}
-                        </button>
-                    </div>
-                `;
-                packagesContainer.appendChild(card);
+                    } catch(e) { return { path, error: "Lỗi giải mã cấu trúc file." }; }
+                }).catch(err => { return { path, error: err }; });
             });
-            lucide.createIcons();
+            Promise.all(promises).then(results => {
+                renderPackagesResults(results.filter(r => !r.error).map(r => r.data));
+            });
+        } else {
+            // Online Web Mode - fetch from API
+            fetch('/api/list')
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.success || !data.packages || data.packages.length === 0) {
+                        packagesContainer.innerHTML = `
+                            <div class="empty-state" style="grid-column: 1/-1; padding: 40px; text-align: center; color: var(--text-muted);">
+                                <i data-lucide="cloud" style="width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.5;"></i>
+                                <p>Cơ sở dữ liệu đám mây đang trống. Hãy tạo gói thầu mới!</p>
+                            </div>
+                        `;
+                        packageCountText.textContent = `0 gói thầu đã lưu`;
+                        lucide.createIcons();
+                        return;
+                    }
+                    renderPackagesResults(data.packages);
+                })
+                .catch(err => {
+                    packagesContainer.innerHTML = `<p style="color: red; padding: 20px;">Lỗi kết nối Server: ${err}</p>`;
+                });
+        }
+    }
+
+    function renderPackagesResults(validPackages) {
+        let activeFilter = document.querySelector('.filter-item.active').dataset.filter;
+        let activeSort = document.querySelector('.filter-item.active').dataset.sort || 'newest';
+
+        packageCountText.textContent = `${validPackages.length} gói thầu đã lưu`;
+        
+        validPackages.sort((a, b) => {
+            if (activeSort === 'newest') return (b.updatedAt || 0) - (a.updatedAt || 0);
+            if (activeSort === 'oldest') return (a.updatedAt || 0) - (b.updatedAt || 0);
+            if (activeSort === 'name-asc') return (a.name || '').localeCompare(b.name || '');
+            if (activeSort === 'name-desc') return (b.name || '').localeCompare(a.name || '');
+            return 0;
         });
+
+        if (activeFilter === 'completed') {
+            validPackages = validPackages.filter(p => p.completedSteps && p.completedSteps.length === templates.length);
+        } else if (activeFilter === 'in-progress') {
+            validPackages = validPackages.filter(p => !p.completedSteps || p.completedSteps.length < templates.length);
+        }
+
+        validPackages.forEach(pkg => {
+            const card = document.createElement('div');
+            card.className = 'package-card';
+            
+            const updatedAt = pkg.updatedAt ? new Date(pkg.updatedAt).toLocaleString('vi-VN') : 'Không rõ';
+            const completedCount = pkg.completedSteps ? pkg.completedSteps.length : 0;
+            const totalCount = templates.length;
+            const progressPct = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+
+            card.innerHTML = `
+                <div class="package-header">
+                    <div class="package-icon">
+                        <i data-lucide="box"></i>
+                    </div>
+                    <div class="package-info">
+                        <h3 class="package-name" title="${escapeHtml(pkg.name)}">${escapeHtml(pkg.name)}</h3>
+                        <div class="package-meta">
+                            <span><i data-lucide="clock"></i> ${updatedAt}</span>
+                            <span><i data-lucide="check-circle-2"></i> ${completedCount}/${totalCount} bước</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="package-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${progressPct}%"></div>
+                    </div>
+                </div>
+
+                <div class="package-actions">
+                    <button class="btn btn-secondary btn-sm btn-delete-pkg" data-path="${escapeHtml(pkg.filePath)}">
+                        <i data-lucide="trash-2"></i> Xóa
+                    </button>
+                    <button class="btn btn-primary btn-sm btn-open-pkg" data-path="${escapeHtml(pkg.filePath)}">
+                        <i data-lucide="arrow-right"></i> ${completedCount > 0 ? 'Tiếp tục' : 'Mở'}
+                    </button>
+                </div>
+            `;
+            packagesContainer.appendChild(card);
+        });
+        lucide.createIcons();
     }
 
     // -------------------------------------------------------------------------
@@ -514,7 +498,6 @@ document.addEventListener('DOMContentLoaded', () => {
         closeNewPackageModal();
 
         if (window.pywebview && window.pywebview.api) {
-            // Sanitize filename
             const cleanName = name.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '_') || 'GoiThau';
             
             showFloatingNotice('Đang mở hộp thoại lưu file...', 'warning');
@@ -525,7 +508,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 
-                // Make sure path is a string
                 const filePath = typeof path === 'string' ? path : String(path);
                 
                 const newPkg = {
@@ -542,7 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         registerPackagePath(filePath);
                         openWorkspace(newPkg);
                         showFloatingNotice(`Đã tạo hồ sơ: ${filePath.split(/[\\/]/).pop()}`);
-                        syncToGoogleSheet(newPkg); // <-- Đẩy dữ liệu khi tạo mới
+                        syncToGoogleSheet(newPkg); 
                     } else {
                         showFloatingNotice(`Lỗi khởi tạo file: ${res}`, 'error');
                     }
@@ -553,19 +535,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 showFloatingNotice(`Lỗi mở hộp thoại: ${err}`, 'error');
             });
         } else {
-            // Fallback for browser testing
-            const mockPath = `C:/HoSoMuaSam/${name.replace(/\s+/g, '_')}.hsmsam`;
+            // Online Web Mode - post to API
             const newPkg = {
                 name: name,
-                filePath: mockPath,
+                filePath: Date.now().toString(),
                 currentStepIndex: 0,
                 updatedAt: Date.now(),
                 completedSteps: [],
                 stepsData: {}
             };
-            registerPackagePath(mockPath);
-            openWorkspace(newPkg);
-            syncToGoogleSheet(newPkg);
+            fetch('/api/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newPkg)
+            }).then(() => {
+                openWorkspace(newPkg);
+                syncToGoogleSheet(newPkg);
+            });
         }
     }
 
@@ -581,19 +567,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     registerPackagePath(path);
                     openWorkspace(parsed);
-} catch(e) {
+                } catch(e) {
                     showFloatingNotice("Giải mã tệp tin thất bại.", 'error');
                 }
             });
         } else {
-            let pkgs = {};
-            try { pkgs = JSON.parse(localStorage.getItem('app_packages')) || {}; } catch(e){}
-            if (pkgs[path]) {
-                registerPackagePath(path);
-                openWorkspace(pkgs[path]);
-            } else {
-                showFloatingNotice("Khong tim thay du lieu goi thau trong bo nho trinh duyet.", 'error');
-            }
+            // Online Web Mode - fetch from API
+            fetch(`/api/get?id=${encodeURIComponent(path)}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && data.package) {
+                        openWorkspace(data.package);
+                    } else {
+                        showFloatingNotice("Không tìm thấy dữ liệu gói thầu trên Server.", 'error');
+                    }
+                })
+                .catch(err => {
+                    showFloatingNotice("Lỗi kết nối Server.", 'error');
+                });
         }
     }
 
@@ -1322,7 +1313,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // -------------------------------------------------------------------------
     function syncToGoogleSheet(pkg) {
         const syncUrl = GOOGLE_SHEET_SYNC_URL;
-        if (!syncUrl || !syncUrl.startsWith('http')) return; // Không cấu hình hoặc sai cấu hình
+        if (!syncUrl || !syncUrl.startsWith('http')) return; 
 
         const currentUsername = sessionStorage.getItem('display_name') || sessionStorage.getItem('current_username') || 'Không rõ';
         let progress = 0;
@@ -1339,7 +1330,7 @@ document.addEventListener('DOMContentLoaded', () => {
             tenGoiThau: pkg.name || 'Gói thầu không tên',
             nguoiDung: currentUsername,
             trangThai: `Hoàn thành ${progress}%`,
-            chiTietTienDo: completedSteps.join(" | "), // Chi tiết các mốc (bước) đã hoàn thành
+            chiTietTienDo: completedSteps.join(" | "), 
             tenFile: pkg.filePath || 'Chưa lưu file'
         };
 
@@ -1380,10 +1371,26 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } else {
             // Browser local mock save
-            unsavedChanges = false;
-            updateUnsavedChangesDot();
-            showFloatingNotice("Đã lưu vào bộ nhớ Local (Môi trường Web Sandbox)");
-            syncToGoogleSheet(activePackage);
+            // Online Web Mode - save to API
+            fetch('/api/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(activePackage)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    unsavedChanges = false;
+                    updateUnsavedChangesDot();
+                    showFloatingNotice("Da luu vao Co so du lieu Online thanh cong!");
+                    syncToGoogleSheet(activePackage);
+                } else {
+                    showFloatingNotice(`Loi luu Online: ${data.error}`, 'error');
+                }
+            })
+            .catch(err => {
+                showFloatingNotice(`Loi ket noi Online: ${err}`, 'error');
+            });
         }
     }
 
