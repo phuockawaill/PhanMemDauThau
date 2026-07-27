@@ -2538,6 +2538,43 @@ function exportToTxt() {
         }
     };
 
+    // =========================================================================
+    // EXPORT TO EXCEL
+    // =========================================================================
+    const btnExportExcel = document.getElementById('btn-export-excel');
+    if (btnExportExcel) {
+        btnExportExcel.addEventListener('click', () => {
+            const pkgs = window.allPackages || [];
+            if (pkgs.length === 0) {
+                showFloatingNotice('Không có dữ liệu để xuất', 'warning');
+                return;
+            }
+            
+            const data = pkgs.map((pkg, index) => {
+                const total = typeof templates !== 'undefined' && templates.length > 0 ? templates.length : 17;
+                const completedCount = pkg.completedSteps ? pkg.completedSteps.length : 0;
+                let status = 'Mới tạo';
+                if (completedCount >= total) status = 'Hoàn thành';
+                else if (completedCount > 0) status = 'Đang làm';
+
+                return {
+                    'STT': index + 1,
+                    'Tên gói thầu': pkg.name,
+                    'Người tạo': pkg.author || 'Unknown',
+                    'Tiến độ': `${completedCount}/${total} bước`,
+                    'Trạng thái': status,
+                    'Cập nhật cuối': pkg.updatedAt ? new Date(pkg.updatedAt).toLocaleString('vi-VN') : ''
+                };
+            });
+
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "DanhSachGoiThau");
+            XLSX.writeFile(wb, "ThongKe_GoiThau.xlsx");
+            showFloatingNotice('Đã xuất file Excel!');
+        });
+    }
+
 });
 
 
