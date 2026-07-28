@@ -2075,6 +2075,124 @@ function exportToTxt() {
         script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
         document.head.appendChild(script);
     }
+
+    // --- SIDEBAR MENU LOGIC ---
+    const menuLibrary = document.getElementById('menu-library');
+    const menuDashboard = document.getElementById('menu-dashboard');
+    const portalToolbar = document.querySelector('.portal-toolbar');
+    const packagesContainer = document.getElementById('packages-container');
+    const filterSections = document.querySelectorAll('.filter-section:not(#sidebar-menu-main)');
+
+    function ensureDashboardSection() {
+        let ds = document.getElementById('dashboard-section');
+        if (!ds) {
+            ds = document.createElement('div');
+            ds.id = 'dashboard-section';
+            ds.style.display = 'none';
+            ds.innerHTML = `
+                <div class="dashboard-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0; color: var(--text-main);">Thống kê Chuyên sâu</h2>
+                    <select id="time-filter" class="form-control" style="width: 200px; padding: 8px; border-radius: 8px; background: var(--bg-app); color: var(--text-main); border: 1px solid var(--border-color);">
+                        <option value="all">Toàn thời gian</option>
+                        <option value="today">Hôm nay</option>
+                        <option value="week">Tuần này</option>
+                        <option value="month">Tháng này</option>
+                        <option value="year">Năm nay</option>
+                    </select>
+                </div>
+                <div class="stats-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px;">
+                    <div class="stat-card" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); text-align: center;">
+                        <h3 style="color: var(--text-muted); font-size: 13px; margin: 0 0 10px 0;">Tổng số hồ sơ</h3>
+                        <div id="stat-total" style="font-size: 28px; font-weight: 700; color: var(--text-main);">0</div>
+                    </div>
+                    <div class="stat-card" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); text-align: center;">
+                        <h3 style="color: var(--text-muted); font-size: 13px; margin: 0 0 10px 0;">Đã hoàn thành</h3>
+                        <div id="stat-completed" style="font-size: 28px; font-weight: 700; color: var(--success);">0</div>
+                    </div>
+                    <div class="stat-card" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); text-align: center;">
+                        <h3 style="color: var(--text-muted); font-size: 13px; margin: 0 0 10px 0;">Đang thực hiện</h3>
+                        <div id="stat-ongoing" style="font-size: 28px; font-weight: 700; color: var(--warning);">0</div>
+                    </div>
+                </div>
+                <div class="charts-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="chart-container" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); height: 350px;">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                    <div class="chart-container" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); height: 350px;">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                    <div class="chart-container" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); height: 350px;">
+                        <canvas id="leaderboardChart"></canvas>
+                    </div>
+                    <div class="chart-container" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); height: 350px;">
+                        <canvas id="bottleneckChart"></canvas>
+                    </div>
+                </div>
+            `;
+            const mainPortal = document.querySelector('.portal-main');
+            if (mainPortal) {
+                mainPortal.insertBefore(ds, mainPortal.firstChild);
+            }
+            
+            // Attach event for time filter
+            setTimeout(() => {
+                const tf = document.getElementById('time-filter');
+                if (tf && !tf.hasAttribute('data-bound')) {
+                    tf.setAttribute('data-bound', '1');
+                    tf.addEventListener('change', () => {
+                        if (typeof renderDashboard === 'function') renderDashboard();
+                    });
+                }
+            }, 100);
+        }
+        return ds;
+    }
+
+    // Attempt injection early
+    ensureDashboardSection();
+
+    if (menuLibrary && menuDashboard) {
+        menuLibrary.addEventListener('click', () => {
+            menuLibrary.classList.add('active');
+            menuDashboard.classList.remove('active');
+            
+            // Show library components
+            if (portalToolbar) portalToolbar.style.display = 'flex';
+            if (packagesContainer) packagesContainer.style.display = 'grid'; // it uses grid usually
+            
+            // Show side filters
+            filterSections.forEach(s => s.style.display = 'block');
+            
+            // Hide dashboard
+            let ds = document.getElementById('dashboard-section');
+            if (ds) ds.style.display = 'none';
+        });
+
+        menuDashboard.addEventListener('click', () => {
+            menuDashboard.classList.add('active');
+            menuLibrary.classList.remove('active');
+            
+            // Hide library components
+            if (portalToolbar) portalToolbar.style.display = 'none';
+            if (packagesContainer) packagesContainer.style.display = 'none';
+            
+            // Hide side filters (they are not relevant for dashboard)
+            filterSections.forEach(s => s.style.display = 'none');
+            
+            // Show dashboard
+            let ds = ensureDashboardSection();
+            ds.style.display = 'block';
+            
+            if (typeof renderDashboard === 'function') {
+                if (typeof Chart === 'undefined') {
+                    setTimeout(renderDashboard, 1000);
+                } else {
+                    renderDashboard();
+                }
+            }
+        });
+    }
+
     if (typeof XLSX === 'undefined') {
         const script = document.createElement('script');
         script.src = 'https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js';
@@ -2084,90 +2202,12 @@ function exportToTxt() {
     // Ensure Dashboard and Export buttons exist (Cache busting fallback)
     const portalActions = document.querySelector('.portal-actions');
     if (portalActions && !document.getElementById('portal-dashboard-btn')) {
-        const dashboardBtn = document.createElement('button');
-        dashboardBtn.className = 'btn btn-secondary';
-        dashboardBtn.id = 'portal-dashboard-btn';
-        dashboardBtn.style.marginLeft = '10px';
-        dashboardBtn.innerHTML = '<i data-lucide="bar-chart-2"></i> Thống kê';
         
-        const exportBtn = document.createElement('button');
-        exportBtn.className = 'btn btn-secondary';
-        exportBtn.id = 'btn-export-excel';
-        exportBtn.style.marginLeft = '10px';
-        exportBtn.innerHTML = '<i data-lucide="download"></i> Xuất Excel';
-        
-        // Insert before change-pwd-btn or at the beginning
-        portalActions.prepend(exportBtn);
-        portalActions.prepend(dashboardBtn);
         
         if (typeof lucide !== 'undefined') lucide.createIcons();
 
         // Attach events
-        dashboardBtn.addEventListener('click', () => {
-            let ds = document.getElementById('dashboard-section');
-            if (!ds) {
-                // Inject dashboard section if HTML is cached
-                ds = document.createElement('div');
-                ds.id = 'dashboard-section';
-                ds.style.marginBottom = '20px';
-                ds.style.display = 'none';
-                ds.innerHTML = `
-                    <div class="dashboard-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h2 style="margin: 0; color: var(--text-main);">Thống kê Chuyên sâu</h2>
-                        <select id="time-filter" class="form-control" style="width: 200px; padding: 8px; border-radius: 8px; background: var(--bg-app); color: var(--text-main); border: 1px solid var(--border-color);">
-                            <option value="all">Toàn thời gian</option>
-                            <option value="today">Hôm nay</option>
-                            <option value="week">Tuần này</option>
-                            <option value="month">Tháng này</option>
-                            <option value="year">Năm nay</option>
-                        </select>
-                    </div>
-                    <div class="stats-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px;">
-                        <div class="stat-card" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); text-align: center;">
-                            <h3 style="color: var(--text-muted); font-size: 13px; margin: 0 0 10px 0;">Tổng số hồ sơ</h3>
-                            <div id="stat-total" style="font-size: 28px; font-weight: 700; color: var(--text-main);">0</div>
-                        </div>
-                        <div class="stat-card" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); text-align: center;">
-                            <h3 style="color: var(--text-muted); font-size: 13px; margin: 0 0 10px 0;">Đã hoàn thành</h3>
-                            <div id="stat-completed" style="font-size: 28px; font-weight: 700; color: var(--success);">0</div>
-                        </div>
-                        <div class="stat-card" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); text-align: center;">
-                            <h3 style="color: var(--text-muted); font-size: 13px; margin: 0 0 10px 0;">Đang thực hiện</h3>
-                            <div id="stat-ongoing" style="font-size: 28px; font-weight: 700; color: var(--warning);">0</div>
-                        </div>
-                    </div>
-                    <div class="charts-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                        <div class="chart-container" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); height: 350px;">
-                            <canvas id="statusChart"></canvas>
-                        </div>
-                        <div class="chart-container" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); height: 350px;">
-                            <canvas id="trendChart"></canvas>
-                        </div>
-                        <div class="chart-container" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); height: 350px;">
-                            <canvas id="leaderboardChart"></canvas>
-                        </div>
-                        <div class="chart-container" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); height: 350px;">
-                            <canvas id="bottleneckChart"></canvas>
-                        </div>
-                    </div>
-                `;
-                const mainPortal = document.querySelector('.portal-main');
-                if (mainPortal) {
-                    mainPortal.insertBefore(ds, mainPortal.firstChild);
-                }
-            }
-            if (ds.style.display === 'none' || ds.style.display === '') {
-                ds.style.display = 'block';
-                
-                
-            // Attach event for time filter
-            setTimeout(() => {
-                const tf = document.getElementById('time-filter');
-                if (tf && !tf.hasAttribute('data-bound')) {
-                    tf.setAttribute('data-bound', '1');
-                    tf.addEventListener('change', () => {
-                        if (typeof renderDashboard === 'function') renderDashboard();
-                    });
+        
                 }
             }, 100);
 
@@ -2222,20 +2262,7 @@ function exportToTxt() {
 
     const dashboardBtn = document.getElementById('portal-dashboard-btn');
     if (dashboardBtn) {
-        dashboardBtn.addEventListener('click', () => {
-            const ds = document.getElementById('dashboard-section');
-            if (ds.style.display === 'none' || ds.style.display === '') {
-                ds.style.display = 'block';
-                
-                
-            // Attach event for time filter
-            setTimeout(() => {
-                const tf = document.getElementById('time-filter');
-                if (tf && !tf.hasAttribute('data-bound')) {
-                    tf.setAttribute('data-bound', '1');
-                    tf.addEventListener('change', () => {
-                        if (typeof renderDashboard === 'function') renderDashboard();
-                    });
+        
                 }
             }, 100);
 
