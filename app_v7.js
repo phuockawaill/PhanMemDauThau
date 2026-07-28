@@ -2137,74 +2137,321 @@ function exportToTxt() {
     const portalToolbar = document.querySelector('.portal-toolbar');
     const filterSections = document.querySelectorAll('.filter-section:not(#sidebar-menu-main)');
 
+        function renderDashboardCharts() {
+        if (typeof Chart === 'undefined') return;
+
+        // Colors for Light Theme AI style
+        const primaryColor = '#4f46e5';
+        const secondaryColor = '#06b6d4';
+        const warningColor = '#f59e0b';
+        const dangerColor = '#ef4444';
+        const successColor = '#10b981';
+
+        // Bar Chart - Tiến độ phòng ban
+        const ctxBar = document.getElementById('chart-phongban');
+        if (ctxBar && !window.chartPhongBan) {
+            window.chartPhongBan = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: ['Hành chính', 'Kế toán', 'Kỹ thuật', 'GĐ'],
+                    datasets: [
+                        { label: 'Hoàn thành', data: [12, 8, 6, 10], backgroundColor: primaryColor, borderRadius: 4 },
+                        { label: 'Đang thực hiện', data: [3, 4, 2, 5], backgroundColor: secondaryColor, borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { 
+                        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#64748b' } }, 
+                        x: { grid: { display: false }, ticks: { color: '#64748b' } } 
+                    },
+                    plugins: { legend: { position: 'top', labels: { boxWidth: 10, font: { size: 11 }, color: '#64748b' } } }
+                }
+            });
+        }
+
+        // Doughnut Chart - Tỷ lệ hoàn thành dự án
+        const ctxPie = document.getElementById('chart-tyle');
+        if (ctxPie && !window.chartTyLe) {
+            window.chartTyLe = new Chart(ctxPie, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Hoàn thành', 'Đang thực hiện', 'Sắp quá hạn', 'Quá hạn'],
+                    datasets: [{
+                        data: [42, 40, 10, 8],
+                        backgroundColor: [primaryColor, successColor, warningColor, dangerColor],
+                        borderWidth: 0,
+                        cutout: '75%'
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { position: 'right', labels: { boxWidth: 12, font: { size: 12 }, color: '#64748b' } } 
+                    }
+                }
+            });
+        }
+    }
+
     function ensureDashboardSection() {
         let ds = document.getElementById('dashboard-section');
         if (!ds) {
             ds = document.createElement('div');
             ds.id = 'dashboard-section';
             ds.style.display = 'none';
+            ds.style.cssText = "padding: 24px; color: var(--text-main); font-family: 'Inter', sans-serif; overflow-y: auto; height: calc(100vh - var(--titlebar-height));";
+            
+            // Premium Card styling
+            const cardStyle = "background: rgba(255,255,255,0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(79,70,229,0.1); border-radius: 12px; padding: 16px; box-shadow: 0 4px 6px -1px rgba(79,70,229,0.05);";
+            
             ds.innerHTML = `
-                <div style="background: linear-gradient(90deg, rgba(37, 99, 235, 0.2) 0%, rgba(124, 58, 237, 0.2) 100%); border-left: 4px solid #8b5cf6; padding: 12px 16px; border-radius: 8px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; box-shadow: 0 0 15px rgba(139, 92, 246, 0.1);">
-                        <i data-lucide="sparkles" style="color: #c084fc; width: 24px; height: 24px; animation: ai-pulse 2s infinite;"></i>
-                        <div>
-                            <div style="color: #e9d5ff; font-weight: 600; font-size: 13px; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px;">VNPT AI Insight</div>
-                            <div style="color: rgba(255,255,255,0.8); font-size: 14px;">Tiến độ tổng thể các gói thầu tháng này đang <b>vượt mức kỳ vọng 12%</b>. Không phát hiện rủi ro điểm nghẽn.</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                    <h2 style="margin: 0; font-size: 24px; font-weight: 700; color: #1e293b;">Bảng điều hành</h2>
+                    <div style="display: flex; gap: 12px;">
+                        <div style="position: relative;">
+                            <i data-lucide="search" style="position: absolute; left: 12px; top: 10px; width: 16px; color: #94a3b8;"></i>
+                            <input type="text" placeholder="Tìm gói thầu, hồ sơ..." style="padding: 8px 16px 8px 36px; border-radius: 8px; border: 1px solid var(--border-color); width: 300px; background: rgba(255,255,255,0.7); outline: none;">
+                        </div>
+                        <button class="btn" style="background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 16px; display: flex; align-items: center; gap: 8px; color: #1e293b;">
+                            <i data-lucide="calendar" style="width: 16px;"></i> Tháng ${new Date().getMonth() + 1}/${new Date().getFullYear()}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TOP 4 CARDS -->
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px;">
+                    <div style="${cardStyle} display: flex; flex-direction: column; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 12px; color: #4f46e5;">
+                            <div style="padding: 10px; background: rgba(79,70,229,0.1); border-radius: 8px;"><i data-lucide="briefcase"></i></div>
+                            <span style="font-weight: 600;">Gói thầu đang thực hiện</span>
+                        </div>
+                        <div style="font-size: 32px; font-weight: 700; color: #1e293b;">18</div>
+                        <div style="font-size: 13px; color: #10b981; font-weight: 500;"><i data-lucide="trending-up" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle;"></i> Tăng 10% so với tháng trước</div>
+                    </div>
+                    <div style="${cardStyle} display: flex; flex-direction: column; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 12px; color: #f59e0b;">
+                            <div style="padding: 10px; background: rgba(245,158,11,0.1); border-radius: 8px;"><i data-lucide="alert-triangle"></i></div>
+                            <span style="font-weight: 600;">Sắp quá hạn</span>
+                        </div>
+                        <div style="font-size: 32px; font-weight: 700; color: #1e293b;">5</div>
+                        <div style="font-size: 13px; color: #f59e0b; font-weight: 500;">Cần xử lý kịp thời</div>
+                    </div>
+                    <div style="${cardStyle} display: flex; flex-direction: column; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 12px; color: #10b981;">
+                            <div style="padding: 10px; background: rgba(16,185,129,0.1); border-radius: 8px;"><i data-lucide="check-circle"></i></div>
+                            <span style="font-weight: 600;">Hoàn thành đúng hạn</span>
+                        </div>
+                        <div style="font-size: 32px; font-weight: 700; color: #1e293b;">92%</div>
+                        <div style="font-size: 13px; color: #10b981; font-weight: 500;"><i data-lucide="trending-up" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle;"></i> Tăng 8% so với tháng trước</div>
+                    </div>
+                    <div style="${cardStyle} display: flex; flex-direction: column; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 12px; color: #7c3aed;">
+                            <div style="padding: 10px; background: rgba(124,58,237,0.1); border-radius: 8px;"><i data-lucide="pie-chart"></i></div>
+                            <span style="font-weight: 600;">Tổng giá trị dự toán</span>
+                        </div>
+                        <div style="font-size: 32px; font-weight: 700; color: #1e293b;">92.8 tỷ</div>
+                        <div style="font-size: 13px; color: #7c3aed; font-weight: 500;">Đạt 192% kế hoạch năm</div>
+                    </div>
+                </div>
+
+                <!-- MIDDLE 3 COLS -->
+                <div style="display: grid; grid-template-columns: 1.2fr 1.5fr 1fr; gap: 20px; margin-bottom: 24px;">
+                    <!-- Gói thầu trọng điểm -->
+                    <div style="${cardStyle}">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                            <h3 style="margin: 0; font-size: 16px; color: #1e293b;">Gói thầu trọng điểm</h3>
+                            <a href="#" style="color: #4f46e5; text-decoration: none; font-size: 13px; font-weight: 500;">Xem tất cả</a>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 16px;">
+                            <div style="padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: white;">
+                                <span style="background: rgba(239,68,68,0.1); color: #ef4444; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">Ưu tiên cao</span>
+                                <div style="font-weight: 600; margin: 8px 0 4px 0; color: #1e293b;">Cung cấp thiết bị phòng Server</div>
+                                <div style="font-size: 12px; color: #64748b; display: flex; justify-content: space-between;">
+                                    <span>Bệnh viện đa khoa</span>
+                                    <span style="color: #ef4444;">Hạn: 02/08/2026</span>
+                                </div>
+                                <div style="margin-top: 10px; background: #e2e8f0; border-radius: 4px; height: 6px; overflow: hidden;">
+                                    <div style="width: 68%; background: #4f46e5; height: 100%;"></div>
+                                </div>
+                            </div>
+                            <div style="padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: white;">
+                                <span style="background: rgba(79,70,229,0.1); color: #4f46e5; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">Bình thường</span>
+                                <div style="font-weight: 600; margin: 8px 0 4px 0; color: #1e293b;">Phần mềm Quản lý Nhân sự</div>
+                                <div style="font-size: 12px; color: #64748b; display: flex; justify-content: space-between;">
+                                    <span>Sở Nội vụ tỉnh</span>
+                                    <span style="color: #f59e0b;">Hạn: 25/08/2026</span>
+                                </div>
+                                <div style="margin-top: 10px; background: #e2e8f0; border-radius: 4px; height: 6px; overflow: hidden;">
+                                    <div style="width: 30%; background: #4f46e5; height: 100%;"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="dashboard-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h2 style="margin: 0; color: var(--text-main); display: inline-block; overflow: hidden; white-space: nowrap; border-right: 2px solid #60a5fa; animation: ai-typing 2s steps(40, end), ai-blink-caret .75s step-end infinite;">Thống kê Chuyên sâu</h2>
-                    <select id="time-filter" class="form-control" style="width: 200px; padding: 8px; border-radius: 8px; background: var(--bg-app); color: var(--text-main); border: 1px solid var(--border-color);">
-                        <option value="all">Toàn thời gian</option>
-                        <option value="today">Hôm nay</option>
-                        <option value="week">Tuần này</option>
-                        <option value="month">Tháng này</option>
-                        <option value="year">Năm nay</option>
-                    </select>
+                    
+                    <!-- Tiến độ phòng ban -->
+                    <div style="${cardStyle}">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                            <h3 style="margin: 0; font-size: 16px; color: #1e293b;">Tiến độ theo phòng ban</h3>
+                            <select style="border: 1px solid var(--border-color); background: white; color: #64748b; font-size: 13px; border-radius: 6px; padding: 4px 8px;"><option>Tất cả phòng ban</option></select>
+                        </div>
+                        <div style="height: 250px; width: 100%; position: relative;">
+                            <canvas id="chart-phongban"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Công việc hôm nay -->
+                    <div style="${cardStyle}">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                            <h3 style="margin: 0; font-size: 16px; color: #1e293b;">Công việc hôm nay</h3>
+                            <a href="#" style="color: #4f46e5; text-decoration: none; font-size: 13px; font-weight: 500;">Xem tất cả</a>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <div style="display: flex; gap: 12px; padding-bottom: 12px; border-bottom: 1px dashed var(--border-color);">
+                                <div style="width: 40px; height: 40px; background: rgba(124,58,237,0.1); color: #7c3aed; border-radius: 8px; display: flex; align-items: center; justify-content: center;"><i data-lucide="file-text"></i></div>
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600; font-size: 14px; color: #1e293b;">Nộp HSDT - Sở KH&CN</div>
+                                    <div style="font-size: 12px; color: #64748b;">16:00 hôm nay</div>
+                                </div>
+                                <span style="color: #ef4444; font-size: 11px; font-weight: 600; align-self: center; background: rgba(239,68,68,0.1); padding: 2px 6px; border-radius: 4px;">Quan trọng</span>
+                            </div>
+                            <div style="display: flex; gap: 12px; padding-bottom: 12px; border-bottom: 1px dashed var(--border-color);">
+                                <div style="width: 40px; height: 40px; background: rgba(79,70,229,0.1); color: #4f46e5; border-radius: 8px; display: flex; align-items: center; justify-content: center;"><i data-lucide="users"></i></div>
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600; font-size: 14px; color: #1e293b;">Họp làm rõ yêu cầu</div>
+                                    <div style="font-size: 12px; color: #64748b;">08:30 ngày mai</div>
+                                </div>
+                                <span style="color: #4f46e5; font-size: 11px; font-weight: 600; align-self: center; background: rgba(79,70,229,0.1); padding: 2px 6px; border-radius: 4px;">Cuộc họp</span>
+                            </div>
+                            <div style="display: flex; gap: 12px;">
+                                <div style="width: 40px; height: 40px; background: rgba(245,158,11,0.1); color: #f59e0b; border-radius: 8px; display: flex; align-items: center; justify-content: center;"><i data-lucide="alert-circle"></i></div>
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600; font-size: 14px; color: #1e293b;">Thiếu biên bản khảo sát</div>
+                                    <div style="font-size: 12px; color: #64748b;">Dự án WAN tỉnh</div>
+                                </div>
+                                <span style="color: #f59e0b; font-size: 11px; font-weight: 600; align-self: center; background: rgba(245,158,11,0.1); padding: 2px 6px; border-radius: 4px;">Cần xử lý</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="stats-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px;">
-                    <div class="stat-card" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); text-align: center;">
-                        <h3 style="color: var(--text-muted); font-size: 13px; margin: 0 0 10px 0;">Tổng số hồ sơ</h3>
-                        <div id="stat-total" style="font-size: 28px; font-weight: 700; color: var(--text-main);">0</div>
+
+                <!-- BOTTOM 4 COLS -->
+                <div style="display: grid; grid-template-columns: 1fr 1.2fr 2fr 1fr; gap: 20px; padding-bottom: 40px;">
+                    <!-- Tỷ lệ hoàn thành (Donut) -->
+                    <div style="${cardStyle}">
+                        <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Tỷ lệ hoàn thành dự án</h3>
+                        <div style="height: 180px; width: 100%; position: relative;">
+                            <canvas id="chart-tyle"></canvas>
+                            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; margin-left: -45px;">
+                                <div style="font-size: 11px; color: #64748b;">Tổng số</div>
+                                <div style="font-size: 24px; font-weight: 700; color: #1e293b;">50</div>
+                                <div style="font-size: 10px; color: #64748b;">Dự án</div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="stat-card" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); text-align: center;">
-                        <h3 style="color: var(--text-muted); font-size: 13px; margin: 0 0 10px 0;">Đã hoàn thành</h3>
-                        <div id="stat-completed" style="font-size: 28px; font-weight: 700; color: var(--success);">0</div>
+
+                    <!-- Cảnh báo -->
+                    <div style="${cardStyle}">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                            <h3 style="margin: 0; font-size: 16px; color: #1e293b;">Cảnh báo</h3>
+                            <a href="#" style="color: #4f46e5; text-decoration: none; font-size: 13px; font-weight: 500;">Xem tất cả</a>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 16px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: white; border-radius: 8px; border: 1px solid var(--border-color);">
+                                <div style="display: flex; gap: 12px; align-items: center;">
+                                    <i data-lucide="alert-triangle" style="color: #ef4444;"></i>
+                                    <div>
+                                        <div style="font-size: 13px; font-weight: 600; color: #1e293b;">5 gói thầu sắp quá hạn</div>
+                                        <div style="font-size: 11px; color: #64748b;">Cần xử lý trong 3 ngày tới</div>
+                                    </div>
+                                </div>
+                                <i data-lucide="chevron-right" style="width: 16px; color: #94a3b8;"></i>
+                            </div>
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: white; border-radius: 8px; border: 1px solid var(--border-color);">
+                                <div style="display: flex; gap: 12px; align-items: center;">
+                                    <i data-lucide="file-warning" style="color: #f59e0b;"></i>
+                                    <div>
+                                        <div style="font-size: 13px; font-weight: 600; color: #1e293b;">12 hồ sơ chưa ký số</div>
+                                        <div style="font-size: 11px; color: #64748b;">Cần ký số để hoàn thiện</div>
+                                    </div>
+                                </div>
+                                <i data-lucide="chevron-right" style="width: 16px; color: #94a3b8;"></i>
+                            </div>
+                        </div>
                     </div>
-                    <div class="stat-card" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); text-align: center;">
-                        <h3 style="color: var(--text-muted); font-size: 13px; margin: 0 0 10px 0;">Đang thực hiện</h3>
-                        <div id="stat-ongoing" style="font-size: 28px; font-weight: 700; color: var(--warning);">0</div>
+
+                    <!-- Hồ sơ cập nhật gần đây -->
+                    <div style="${cardStyle}">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                            <h3 style="margin: 0; font-size: 16px; color: #1e293b;">Hồ sơ cập nhật gần đây</h3>
+                            <a href="#" style="color: #4f46e5; text-decoration: none; font-size: 13px; font-weight: 500;">Xem tất cả</a>
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                            <thead>
+                                <tr style="color: #64748b; text-align: left; border-bottom: 1px solid var(--border-color);">
+                                    <th style="padding-bottom: 8px; font-weight: 500;">Tên hồ sơ</th>
+                                    <th style="padding-bottom: 8px; font-weight: 500;">Dự án</th>
+                                    <th style="padding-bottom: 8px; font-weight: 500;">Cập nhật bởi</th>
+                                    <th style="padding-bottom: 8px; font-weight: 500;">Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="padding: 10px 0; color: #1e293b; font-weight: 500;"><i data-lucide="file-text" style="color: #ef4444; width: 14px; margin-right: 6px; display: inline-block; vertical-align: middle;"></i> Tờ trình phê duyệt</td>
+                                    <td style="padding: 10px 0; color: #64748b;">Dự án WAN tỉnh</td>
+                                    <td style="padding: 10px 0; color: #1e293b;">Nguyễn Văn A</td>
+                                    <td style="padding: 10px 0;"><span style="background: rgba(16,185,129,0.1); color: #10b981; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;">Đã ký số</span></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px 0; color: #1e293b; font-weight: 500;"><i data-lucide="file" style="color: #4f46e5; width: 14px; margin-right: 6px; display: inline-block; vertical-align: middle;"></i> Yêu cầu kỹ thuật</td>
+                                    <td style="padding: 10px 0; color: #64748b;">Dự án TTHC 2.0</td>
+                                    <td style="padding: 10px 0; color: #1e293b;">Trần Thị B</td>
+                                    <td style="padding: 10px 0;"><span style="background: rgba(79,70,229,0.1); color: #4f46e5; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;">Đang hoàn thiện</span></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px 0; border-bottom: none; color: #1e293b; font-weight: 500;"><i data-lucide="file-spreadsheet" style="color: #10b981; width: 14px; margin-right: 6px; display: inline-block; vertical-align: middle;"></i> Bảng dự toán chi tiết</td>
+                                    <td style="padding: 10px 0; border-bottom: none; color: #64748b;">Phần mềm HIS</td>
+                                    <td style="padding: 10px 0; border-bottom: none; color: #1e293b;">Lê Văn C</td>
+                                    <td style="padding: 10px 0; border-bottom: none;"><span style="background: rgba(245,158,11,0.1); color: #f59e0b; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;">Chờ duyệt</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
-                </div>
-                <div class="charts-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                    <div class="chart-container" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); height: 350px;">
-                        <canvas id="statusChart"></canvas>
-                    </div>
-                    <div class="chart-container" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); height: 350px;">
-                        <canvas id="trendChart"></canvas>
-                    </div>
-                    <div class="chart-container" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); height: 350px;">
-                        <canvas id="leaderboardChart"></canvas>
-                    </div>
-                    <div class="chart-container" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); height: 350px;">
-                        <canvas id="bottleneckChart"></canvas>
+
+                    <!-- Thao tác nhanh -->
+                    <div style="${cardStyle}">
+                        <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Thao tác nhanh</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <button style="background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 16px 0; display: flex; flex-direction: column; align-items: center; gap: 8px; color: #4f46e5; cursor: pointer; transition: all 0.2s;">
+                                <i data-lucide="plus-circle"></i>
+                                <span style="font-size: 12px; font-weight: 500; color: #1e293b;">Tạo dự án</span>
+                            </button>
+                            <button style="background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 16px 0; display: flex; flex-direction: column; align-items: center; gap: 8px; color: #4f46e5; cursor: pointer; transition: all 0.2s;">
+                                <i data-lucide="folder-plus"></i>
+                                <span style="font-size: 12px; font-weight: 500; color: #1e293b;">Tạo hồ sơ</span>
+                            </button>
+                            <button style="background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 16px 0; display: flex; flex-direction: column; align-items: center; gap: 8px; color: #4f46e5; cursor: pointer; transition: all 0.2s;">
+                                <i data-lucide="calendar"></i>
+                                <span style="font-size: 12px; font-weight: 500; color: #1e293b;">Tạo lịch họp</span>
+                            </button>
+                            <button style="background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 16px 0; display: flex; flex-direction: column; align-items: center; gap: 8px; color: #4f46e5; cursor: pointer; transition: all 0.2s;">
+                                <i data-lucide="bar-chart-2"></i>
+                                <span style="font-size: 12px; font-weight: 500; color: #1e293b;">Báo cáo nhanh</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
-            const mainPortal = document.querySelector('.portal-main');
-            if (mainPortal) {
-                mainPortal.insertBefore(ds, mainPortal.firstChild);
+            
+            const portalMain = document.querySelector('.portal-main');
+            portalMain.appendChild(ds);
+            
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
             }
             
-            // Attach event for time filter
-            setTimeout(() => {
-                const tf = document.getElementById('time-filter');
-                if (tf && !tf.hasAttribute('data-bound')) {
-                    tf.setAttribute('data-bound', '1');
-                    tf.addEventListener('change', () => {
-                        if (typeof renderDashboard === 'function') renderDashboard();
-                    });
-                }
-            }, 100);
+            // Wait for DOM to be ready before rendering charts
+            setTimeout(renderDashboardCharts, 200);
         }
         return ds;
     }
