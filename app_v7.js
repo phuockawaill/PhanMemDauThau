@@ -2017,6 +2017,17 @@ function exportToTxt() {
                         <li class="menu-item" id="menu-dashboard">
                             <i data-lucide="bar-chart-2"></i> Thống kê Dashboard
                         </li>
+                        <li class="menu-item" id="menu-users" style="display: none;">
+                            <i data-lucide="users"></i> Quản lý Nhân sự
+                        </li>
+                        <li class="menu-item" id="menu-users" style="display: none;">
+                            <i data-lucide="users"></i> Quản lý Nhân sự
+                        </li>
+                            <i data-lucide="bar-chart-2"></i> Thống kê Dashboard
+                        </li>
+                        <li class="menu-item" id="menu-users" style="display: none;">
+                            <i data-lucide="users"></i> Quản lý Nhân sự
+                        </li>
                     </ul>
                 </div>
             `;
@@ -2207,7 +2218,7 @@ function exportToTxt() {
             if (packagesContainer) packagesContainer.style.display = 'grid'; // it uses grid usually
             
             // Show side filters
-            filterSections.forEach(s => s.style.display = 'block');
+            // filterSections.forEach(s => s.style.display = 'block');
             
             // Hide dashboard
             let ds = document.getElementById('dashboard-section');
@@ -2223,7 +2234,7 @@ function exportToTxt() {
             if (packagesContainer) packagesContainer.style.display = 'none';
             
             // Hide side filters (they are not relevant for dashboard)
-            filterSections.forEach(s => s.style.display = 'none');
+            // filterSections.forEach(s => s.style.display = 'none');
             
             // Show dashboard
             let ds = ensureDashboardSection();
@@ -2600,41 +2611,35 @@ function exportToTxt() {
     // =========================================================================
     // LOGIN SCREEN HANDLER
     // =========================================================================
-    (function setupLogin() {
+    (async function setupLogin() {
         const loginScreen = document.getElementById('login-screen');
         const loginUsernameInput = document.getElementById('login-username');
         const loginPasswordInput = document.getElementById('login-password');
         const loginSubmitBtn = document.getElementById('login-submit-btn');
         const loginError = document.getElementById('login-error');
-        const forgotPasswordLink = document.getElementById('forgot-password-link');
-
-        // Accounts list (can be expanded easily or saved to local storage)
-        const DEFAULT_ACCOUNTS = [
-            { username: 'admin',  password: 'vnpt2026', displayName: 'Quản trị viên' },
-            { username: 'vnpt',   password: '123456',   displayName: 'Người dùng VNPT' },
-            { username: 'user',   password: '123456',   displayName: 'Người dùng' },
-        ];
         
-        let ACCOUNTS = DEFAULT_ACCOUNTS;
+        if (!loginScreen) return;
+
+        let ACCOUNTS = [];
         try {
-            const savedAccounts = localStorage.getItem('app_accounts');
-            if (savedAccounts) {
-                ACCOUNTS = JSON.parse(savedAccounts);
-            } else {
-                localStorage.setItem('app_accounts', JSON.stringify(ACCOUNTS));
+            const res = await fetch('/api/users');
+            const data = await res.json();
+            if (data.success && data.users) {
+                ACCOUNTS = data.users;
             }
         } catch (e) {
-            console.error("Lỗi đọc tài khoản:", e);
+            console.error('Lỗi tải danh sách users', e);
         }
 
-        if (forgotPasswordLink) {
-            forgotPasswordLink.addEventListener('click', (e) => {
-                e.preventDefault();
-                alert('Vui lòng liên hệ Quản trị viên hệ thống (Admin) để cấp lại mật khẩu.\n\nHotline hỗ trợ: 1900 xxxx (Nội bộ VNPT)');
-            });
+        // Show admin menu if already logged in
+        if (sessionStorage.getItem('logged_in') === '1') {
+            if (sessionStorage.getItem('current_role') === 'admin') {
+                const mu = document.getElementById('menu-users');
+                if (mu) mu.style.display = 'flex';
+            }
+            loginScreen.style.display = 'none';
+            return;
         }
-
-        if (!loginScreen) return;
 
         function showError(msg) {
             loginError.textContent = msg;
@@ -2654,29 +2659,25 @@ function exportToTxt() {
             const account = ACCOUNTS.find(a => a.username === username && a.password === password);
 
             if (account) {
-                // Save session
                 sessionStorage.setItem('logged_in', '1');
                 sessionStorage.setItem('current_username', account.username);
                 sessionStorage.setItem('display_name', account.displayName);
+                sessionStorage.setItem('current_role', account.role || 'user');
 
-                // Animate out
+                if (account.role === 'admin') {
+                    const mu = document.getElementById('menu-users');
+                    if (mu) mu.style.display = 'flex';
+                }
+
                 loginScreen.style.transition = 'opacity 0.4s ease';
                 loginScreen.style.opacity = '0';
                 setTimeout(() => { loginScreen.style.display = 'none'; }, 400);
             } else {
-                showError('Tên đăng nhập hoặc mật khẩu không đúng. Vui lòng thử lại.');
+                showError('Tên đăng nhập hoặc mật khẩu không đúng.');
             }
         }
 
-        // Check if already logged in this session (TEMPORARILY DISABLED LOGIN)
-        if (sessionStorage.getItem('logged_in') === '1') {
-            loginScreen.style.display = 'none';
-            return;
-        }
-
-        // Show login screen
         loginScreen.style.display = 'flex';
-
         loginSubmitBtn.addEventListener('click', doLogin);
         loginUsernameInput.addEventListener('keypress', e => { if (e.key === 'Enter') loginPasswordInput.focus(); });
         loginPasswordInput.addEventListener('keypress', e => { if (e.key === 'Enter') doLogin(); });
@@ -2685,7 +2686,6 @@ function exportToTxt() {
             loginError.style.display = 'none';
         });
 
-        // Focus username on load
         setTimeout(() => loginUsernameInput.focus(), 100);
     })();
     // =========================================================================
@@ -3003,3 +3003,125 @@ function docTien(so) {
 
 
 window.SYNTAX_OK = true;
+
+
+    // --- USER MANAGEMENT LOGIC ---
+    setTimeout(() => {
+        const menuUsers = document.getElementById('menu-users');
+        if (menuUsers) {
+            menuUsers.addEventListener('click', () => {
+                const menuLibrary = document.getElementById('menu-library');
+                const menuDashboard = document.getElementById('menu-dashboard');
+                const portalToolbar = document.querySelector('.portal-toolbar');
+                const packagesContainer = document.getElementById('packages-container');
+                let ds = document.getElementById('dashboard-section');
+                
+                if (menuLibrary) menuLibrary.classList.remove('active');
+                if (menuDashboard) menuDashboard.classList.remove('active');
+                menuUsers.classList.add('active');
+
+                if (portalToolbar) portalToolbar.style.display = 'none';
+                if (packagesContainer) packagesContainer.style.display = 'none';
+                if (ds) ds.style.display = 'none';
+
+                let us = document.getElementById('users-section');
+                if (!us) {
+                    us = document.createElement('div');
+                    us.id = 'users-section';
+                    us.style.padding = '20px';
+                    us.style.color = 'var(--text-main)';
+                    us.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h2 style="margin: 0;">Quản lý Nhân sự</h2>
+                            <button id="add-user-btn" class="btn btn-primary" style="padding: 8px 16px; border-radius: 8px; border: none; background: #3b82f6; color: white; cursor: pointer;">+ Thêm Tài khoản</button>
+                        </div>
+                        <div style="background: var(--bg-sidebar); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden;">
+                            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid var(--border-color); background: rgba(255,255,255,0.02);">
+                                        <th style="padding: 16px;">Tên đăng nhập</th>
+                                        <th style="padding: 16px;">Tên hiển thị</th>
+                                        <th style="padding: 16px;">Quyền hạn</th>
+                                        <th style="padding: 16px;">Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-tbody">
+                                    <tr><td colspan="4" style="padding: 20px; text-align: center;">Đang tải...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    const mainPortal = document.querySelector('.portal-main');
+                    if (mainPortal) {
+                        mainPortal.insertBefore(us, mainPortal.firstChild);
+                    }
+                    
+                    document.getElementById('add-user-btn').addEventListener('click', () => {
+                        const uname = prompt("Nhập tên đăng nhập mới:");
+                        if (!uname) return;
+                        const pwd = prompt("Nhập mật khẩu mới:");
+                        if (!pwd) return;
+                        const dname = prompt("Nhập tên hiển thị:");
+                        if (!dname) return;
+                        const role = confirm("Tài khoản này là Admin?") ? 'admin' : 'user';
+                        
+                        fetch('/api/users').then(r=>r.json()).then(data => {
+                            let users = data.users || [];
+                            if (users.find(u => u.username === uname)) {
+                                alert("Tên đăng nhập đã tồn tại!"); return;
+                            }
+                            users.push({username: uname, password: pwd, displayName: dname, role: role});
+                            fetch('/api/users', {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/json'},
+                                body: JSON.stringify({users: users})
+                            }).then(() => renderUsersTable());
+                        });
+                    });
+                }
+                us.style.display = 'block';
+                renderUsersTable();
+            });
+        }
+    }, 500);
+
+    function renderUsersTable() {
+        const tbody = document.getElementById('users-tbody');
+        if (!tbody) return;
+        fetch('/api/users').then(r=>r.json()).then(data => {
+            if (data.success && data.users) {
+                tbody.innerHTML = data.users.map((u, i) => `
+                    <tr style="border-bottom: 1px solid var(--border-color);">
+                        <td style="padding: 16px; font-weight: 600;">${u.username}</td>
+                        <td style="padding: 16px;">${u.displayName}</td>
+                        <td style="padding: 16px;">
+                            <span style="padding: 4px 8px; border-radius: 4px; font-size: 12px; background: ${u.role === 'admin' ? 'rgba(239,68,68,0.2)' : 'rgba(59,130,246,0.2)'}; color: ${u.role === 'admin' ? '#fca5a5' : '#93c5fd'};">
+                                ${u.role === 'admin' ? 'Quản trị viên' : 'Nhân viên'}
+                            </span>
+                        </td>
+                        <td style="padding: 16px;">
+                            <button onclick="deleteUser('${u.username}')" style="background: rgba(239,68,68,0.2); color: #fca5a5; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer;">Xóa</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        });
+    }
+
+    window.deleteUser = function(username) {
+        if (username === 'admin') {
+            alert("Không thể xóa tài khoản admin gốc!");
+            return;
+        }
+        if (confirm(`Bạn có chắc muốn xóa tài khoản ${username}?`)) {
+            fetch('/api/users').then(r=>r.json()).then(data => {
+                let users = data.users || [];
+                users = users.filter(u => u.username !== username);
+                fetch('/api/users', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({users: users})
+                }).then(() => renderUsersTable());
+            });
+        }
+    };
