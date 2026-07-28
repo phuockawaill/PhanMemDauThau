@@ -4,14 +4,18 @@
     "name": "00. Dự toán",
     "type": "xlsx",
     "content": "<p><em>Mẫu văn bản: 00. Dự toán</em></p><p>File: 00. Dự toán.xlsx</p>",
-    "fields": []
+    "fields": [],
+    "title": "00. Dự toán",
+    "stepNum": 1
   },
   {
     "id": "local-0_Checklist_Nguon_chi_TX_Chi_dinh_thau_QTRG.xlsx",
     "name": "0_Checklist_Nguon chi TX_Chi dinh thau_QTRG",
     "type": "xlsx",
     "content": "<p><em>Mẫu văn bản: 0_Checklist_Nguon chi TX_Chi dinh thau_QTRG</em></p><p>File: 0_Checklist_Nguon chi TX_Chi dinh thau_QTRG.xlsx</p>",
-    "fields": []
+    "fields": [],
+    "title": "0. Checklist Chi định thầu",
+    "stepNum": 2
   },
   {
     "id": "local-1.1._Trinh_phe_duyet_chu_truong_va_du_kien_kinh_phi_QTRG.docx",
@@ -102,28 +106,36 @@
     "name": "3. Trinh phe duyet Du toan _QTRG",
     "type": "docx",
     "content": "<p><em>Mẫu văn bản: 3. Trinh phe duyet Du toan _QTRG</em></p><p>File: 3. Trinh phe duyet Du toan _QTRG.docx</p>",
-    "fields": []
+    "fields": [],
+    "title": "3. Trình phê duyệt Dự toán",
+    "stepNum": 15
   },
   {
     "id": "local-3.2._QD_Phe_duyet_Du_toan__QTRG.docx",
     "name": "3.2. QD Phe duyet Du toan _QTRG",
     "type": "docx",
     "content": "<p><em>Mẫu văn bản: 3.2. QD Phe duyet Du toan _QTRG</em></p><p>File: 3.2. QD Phe duyet Du toan _QTRG.docx</p>",
-    "fields": []
+    "fields": [],
+    "title": "3.2. QĐ Phê duyệt Dự toán",
+    "stepNum": 16
   },
   {
     "id": "local-4._Trinh_phe_duyet_KHLCNT_QTRG.docx",
     "name": "4. Trinh phe duyet KHLCNT_QTRG",
     "type": "docx",
     "content": "<p><em>Mẫu văn bản: 4. Trinh phe duyet KHLCNT_QTRG</em></p><p>File: 4. Trinh phe duyet KHLCNT_QTRG.docx</p>",
-    "fields": []
+    "fields": [],
+    "title": "4. Trình phê duyệt KHLCNT",
+    "stepNum": 17
   },
   {
     "id": "local-4.1._QD_Phe_KHLCNT_QTRG.docx",
     "name": "4.1. QD Phe KHLCNT_QTRG",
     "type": "docx",
     "content": "<p><em>Mẫu văn bản: 4.1. QD Phe KHLCNT_QTRG</em></p><p>File: 4.1. QD Phe KHLCNT_QTRG.docx</p>",
-    "fields": []
+    "fields": [],
+    "title": "4.1. QĐ Phê duyệt KHLCNT",
+    "stepNum": 18
   },
   {
     "id": "local-6.__Trinh_Tieu_chuan_dinh_muc_may_moc_thiet_bi_chuyen_dung_QTRG.docx",
