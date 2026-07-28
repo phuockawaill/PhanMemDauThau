@@ -397,8 +397,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderPackagesResults(validPackages) {
-        let activeFilter = document.querySelector('.filter-item.active').dataset.filter;
-        let activeSort = document.querySelector('.filter-item.active').dataset.sort || 'newest';
+        let activeFilterObj = document.querySelector('.filter-list [data-filter].active');
+        let activeFilter = activeFilterObj ? activeFilterObj.dataset.filter : 'all';
+        let activeSortObj = document.querySelector('.filter-list [data-sort].active');
+        let activeSort = activeSortObj ? activeSortObj.dataset.sort : 'newest';
 
         packageCountText.textContent = `${validPackages.length} gói thầu đã lưu`;
         
