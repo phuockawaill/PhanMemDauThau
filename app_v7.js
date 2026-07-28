@@ -2624,15 +2624,21 @@ function exportToTxt() {
         
         if (!loginScreen) return;
 
-        let ACCOUNTS = [];
+        const DEFAULT_ACCOUNTS = [
+            { username: 'admin',  password: 'vnpt2026', displayName: 'Quản trị viên', role: 'admin' },
+            { username: 'vnpt',   password: '123456',   displayName: 'Người dùng VNPT', role: 'user' },
+            { username: 'user',   password: '123456',   displayName: 'Người dùng', role: 'user' },
+        ];
+
+        let ACCOUNTS = [...DEFAULT_ACCOUNTS]; // always start with defaults
         try {
             const res = await fetch('/api/users');
             const data = await res.json();
-            if (data.success && data.users) {
-                ACCOUNTS = data.users;
+            if (data.success && data.users && data.users.length > 0) {
+                ACCOUNTS = data.users; // override with DB accounts if available
             }
         } catch (e) {
-            console.error('Lỗi tải danh sách users', e);
+            console.warn('Không thể kết nối API users, dùng tài khoản mặc định.', e);
         }
 
         // Show admin menu if already logged in
