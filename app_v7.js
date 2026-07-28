@@ -2001,6 +2001,51 @@ function exportToTxt() {
     // 16. EVENT LISTENERS SETUP
     // -------------------------------------------------------------------------
     function setupEventListeners() {
+
+    // HTML Cache Busting: If MENU CHÍNH is missing from the sidebar, inject it
+    let sidebarMenuMain = document.getElementById('sidebar-menu-main');
+    if (!sidebarMenuMain) {
+        const portalFilters = document.querySelector('.portal-filters');
+        if (portalFilters) {
+            const menuHtml = `
+                <div class="filter-section" id="sidebar-menu-main">
+                    <span class="filter-title">MENU CHÍNH</span>
+                    <ul class="filter-list">
+                        <li class="menu-item active" id="menu-library">
+                            <i data-lucide="layout-grid"></i> Thư viện hồ sơ
+                        </li>
+                        <li class="menu-item" id="menu-dashboard">
+                            <i data-lucide="bar-chart-2"></i> Thống kê Dashboard
+                        </li>
+                    </ul>
+                </div>
+            `;
+            // insert at the top of portalFilters
+            portalFilters.insertAdjacentHTML('afterbegin', menuHtml);
+            
+            // Because we just injected them, we need to re-query them for the event listeners below
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            // Inject CSS for menu-item if it doesn't exist
+            if (!document.getElementById('menu-item-style')) {
+                const style = document.createElement('style');
+                style.id = 'menu-item-style';
+                style.innerHTML = `
+                    .menu-item {
+                        padding: 10px 14px; margin-bottom: 6px; border-radius: 8px;
+                        cursor: pointer; display: flex; align-items: center; gap: 10px;
+                        color: var(--text-muted); transition: all 0.2s; font-size: 14px;
+                    }
+                    .menu-item:hover { background: rgba(255,255,255,0.05); color: var(--text-main); }
+                    .menu-item.active { background: rgba(59, 130, 246, 0.15); color: var(--primary); font-weight: 600; }
+                    .menu-item i { width: 18px; height: 18px; }
+                `;
+                document.head.appendChild(style);
+            }
+
+        }
+    }
+
         // Portal sidebar Filters
         filterItems.forEach(item => {
             item.addEventListener('click', () => {
