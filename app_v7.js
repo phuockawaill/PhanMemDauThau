@@ -2020,14 +2020,6 @@ function exportToTxt() {
                         <li class="menu-item" id="menu-users" style="display: none;">
                             <i data-lucide="users"></i> Quản lý Nhân sự
                         </li>
-                        <li class="menu-item" id="menu-users" style="display: none;">
-                            <i data-lucide="users"></i> Quản lý Nhân sự
-                        </li>
-                            <i data-lucide="bar-chart-2"></i> Thống kê Dashboard
-                        </li>
-                        <li class="menu-item" id="menu-users" style="display: none;">
-                            <i data-lucide="users"></i> Quản lý Nhân sự
-                        </li>
                     </ul>
                 </div>
             `;
@@ -2046,9 +2038,14 @@ function exportToTxt() {
                         padding: 10px 14px; margin-bottom: 6px; border-radius: 8px;
                         cursor: pointer; display: flex; align-items: center; gap: 10px;
                         color: var(--text-muted); transition: all 0.2s; font-size: 14px;
+                        border-left: 3px solid transparent;
                     }
                     .menu-item:hover { background: rgba(255,255,255,0.05); color: var(--text-main); }
-                    .menu-item.active { background: rgba(59, 130, 246, 0.15); color: var(--primary); font-weight: 600; }
+                    .menu-item.active { 
+                        background: linear-gradient(90deg, rgba(59, 130, 246, 0.25) 0%, rgba(59, 130, 246, 0) 100%); 
+                        color: #60a5fa; font-weight: 700; 
+                        border-left: 3px solid #3b82f6; 
+                    }
                     .menu-item i { width: 18px; height: 18px; }
                 `;
                 document.head.appendChild(style);
