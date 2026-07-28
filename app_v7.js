@@ -2112,6 +2112,16 @@ function exportToTxt() {
                 ds.style.marginBottom = '20px';
                 ds.style.display = 'none';
                 ds.innerHTML = `
+                    <div class="dashboard-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 style="margin: 0; color: var(--text-main);">Thống kê Chuyên sâu</h2>
+                        <select id="time-filter" class="form-control" style="width: 200px; padding: 8px; border-radius: 8px; background: var(--bg-app); color: var(--text-main); border: 1px solid var(--border-color);">
+                            <option value="all">Toàn thời gian</option>
+                            <option value="today">Hôm nay</option>
+                            <option value="week">Tuần này</option>
+                            <option value="month">Tháng này</option>
+                            <option value="year">Năm nay</option>
+                        </select>
+                    </div>
                     <div class="stats-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px;">
                         <div class="stat-card" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); text-align: center;">
                             <h3 style="color: var(--text-muted); font-size: 13px; margin: 0 0 10px 0;">Tổng số hồ sơ</h3>
@@ -2126,9 +2136,18 @@ function exportToTxt() {
                             <div id="stat-ongoing" style="font-size: 28px; font-weight: 700; color: var(--warning);">0</div>
                         </div>
                     </div>
-                    <div class="charts-grid" style="display: grid; grid-template-columns: 1fr; gap: 20px;">
-                        <div class="chart-container" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); height: 300px; display: flex; justify-content: center;">
+                    <div class="charts-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="chart-container" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); height: 350px;">
                             <canvas id="statusChart"></canvas>
+                        </div>
+                        <div class="chart-container" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); height: 350px;">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                        <div class="chart-container" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); height: 350px;">
+                            <canvas id="leaderboardChart"></canvas>
+                        </div>
+                        <div class="chart-container" style="background: var(--bg-sidebar); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); height: 350px;">
+                            <canvas id="bottleneckChart"></canvas>
                         </div>
                     </div>
                 `;
@@ -2140,6 +2159,18 @@ function exportToTxt() {
             if (ds.style.display === 'none' || ds.style.display === '') {
                 ds.style.display = 'block';
                 
+                
+            // Attach event for time filter
+            setTimeout(() => {
+                const tf = document.getElementById('time-filter');
+                if (tf && !tf.hasAttribute('data-bound')) {
+                    tf.setAttribute('data-bound', '1');
+                    tf.addEventListener('change', () => {
+                        if (typeof renderDashboard === 'function') renderDashboard();
+                    });
+                }
+            }, 100);
+
                 if (typeof renderDashboard === 'function') {
                     if (typeof Chart === 'undefined') {
                         setTimeout(renderDashboard, 1000);
@@ -2196,6 +2227,18 @@ function exportToTxt() {
             if (ds.style.display === 'none' || ds.style.display === '') {
                 ds.style.display = 'block';
                 
+                
+            // Attach event for time filter
+            setTimeout(() => {
+                const tf = document.getElementById('time-filter');
+                if (tf && !tf.hasAttribute('data-bound')) {
+                    tf.setAttribute('data-bound', '1');
+                    tf.addEventListener('change', () => {
+                        if (typeof renderDashboard === 'function') renderDashboard();
+                    });
+                }
+            }, 100);
+
                 if (typeof renderDashboard === 'function') {
                     if (typeof Chart === 'undefined') {
                         setTimeout(renderDashboard, 1000);
@@ -2657,15 +2700,39 @@ function exportToTxt() {
     // DASHBOARD & CHARTS
     // =========================================================================
     let statusChartInstance = null;
-    let timeChartInstance = null;
+    let trendChartInstance = null;
+    let leaderboardChartInstance = null;
+    let bottleneckChartInstance = null;
 
     window.renderDashboard = function() {
+        if (typeof Chart === 'undefined') return;
+
+        Chart.defaults.color = '#9ca3af';
+        Chart.defaults.borderColor = 'rgba(255,255,255,0.1)';
+
+        const filterVal = document.getElementById('time-filter') ? document.getElementById('time-filter').value : 'all';
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
         
-            if (typeof XLSX === 'undefined') {
-                showFloatingNotice('Đang tải công cụ Xuất Excel, vui lòng thử lại sau 2 giây...', 'warning');
-                return;
-            }
-            const pkgs = window.allPackages || [];
+        let startOfWeek = new Date(startOfToday);
+        const day = startOfWeek.getDay() || 7; 
+        if (day !== 1) startOfWeek.setHours(-24 * (day - 1));
+        startOfWeek = startOfWeek.getTime();
+
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+        const startOfYear = new Date(now.getFullYear(), 0, 1).getTime();
+
+        let pkgs = window.allPackages || [];
+        
+        // Apply Filter
+        pkgs = pkgs.filter(p => {
+            const utime = p.updatedAt || 0;
+            if (filterVal === 'today') return utime >= startOfToday;
+            if (filterVal === 'week') return utime >= startOfWeek;
+            if (filterVal === 'month') return utime >= startOfMonth;
+            if (filterVal === 'year') return utime >= startOfYear;
+            return true; // all
+        });
 
         const total = pkgs.length;
         let completed = 0;
@@ -2674,22 +2741,44 @@ function exportToTxt() {
 
         const templatesCount = typeof templates !== 'undefined' && templates.length > 0 ? templates.length : 17;
 
+        // Data structures for advanced charts
+        const trendData = {}; // YYYY-MM
+        const authorData = {};
+        const stepData = {}; // step index -> count
+
         pkgs.forEach(p => {
             const c = p.completedSteps ? p.completedSteps.length : 0;
             if (c >= templatesCount) completed++;
             else if (c > 0) ongoing++;
             else newPkg++;
+
+            // Trend Data
+            if (p.updatedAt) {
+                const d = new Date(p.updatedAt);
+                const monthKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}`;
+                trendData[monthKey] = (trendData[monthKey] || 0) + 1;
+            }
+
+            // Author Data
+            const author = p.author || 'Unknown';
+            authorData[author] = (authorData[author] || 0) + 1;
+
+            // Bottleneck Data (only for ongoing packages)
+            if (c > 0 && c < templatesCount) {
+                const stepIdx = p.currentStepIndex || 0;
+                stepData[stepIdx] = (stepData[stepIdx] || 0) + 1;
+            }
         });
 
         document.getElementById('stat-total').textContent = total;
         document.getElementById('stat-completed').textContent = completed;
         document.getElementById('stat-ongoing').textContent = ongoing;
 
+        // 1. Status Doughnut Chart
         if (statusChartInstance) statusChartInstance.destroy();
         const ctxStatus = document.getElementById('statusChart');
         if (ctxStatus) {
-            if (typeof Chart !== 'undefined') {
-statusChartInstance = new Chart(ctxStatus, {
+            statusChartInstance = new Chart(ctxStatus, {
                 type: 'doughnut',
                 data: {
                     labels: ['Hoàn thành', 'Đang thực hiện', 'Mới tạo'],
@@ -2701,13 +2790,88 @@ statusChartInstance = new Chart(ctxStatus, {
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
-                        legend: { position: 'bottom', labels: { color: '#9ca3af' } },
-                        title: { display: true, text: 'Trạng thái Gói thầu', color: '#fff' }
+                        legend: { position: 'bottom' },
+                        title: { display: true, text: 'Tỷ lệ Trạng thái' }
                     }
                 }
             });
-            }
+        }
+
+        // 2. Trend Line Chart
+        if (trendChartInstance) trendChartInstance.destroy();
+        const ctxTrend = document.getElementById('trendChart');
+        if (ctxTrend) {
+            const sortedMonths = Object.keys(trendData).sort();
+            trendChartInstance = new Chart(ctxTrend, {
+                type: 'line',
+                data: {
+                    labels: sortedMonths.length > 0 ? sortedMonths : ['Chưa có dữ liệu'],
+                    datasets: [{
+                        label: 'Số gói thầu mới',
+                        data: sortedMonths.length > 0 ? sortedMonths.map(k => trendData[k]) : [0],
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { title: { display: true, text: 'Xu hướng tạo Gói thầu' } }
+                }
+            });
+        }
+
+        // 3. Leaderboard Bar Chart
+        if (leaderboardChartInstance) leaderboardChartInstance.destroy();
+        const ctxLeader = document.getElementById('leaderboardChart');
+        if (ctxLeader) {
+            const sortedAuthors = Object.keys(authorData).sort((a,b) => authorData[b] - authorData[a]).slice(0, 5); // Top 5
+            leaderboardChartInstance = new Chart(ctxLeader, {
+                type: 'bar',
+                data: {
+                    labels: sortedAuthors.length > 0 ? sortedAuthors : ['Trống'],
+                    datasets: [{
+                        label: 'Số gói thầu',
+                        data: sortedAuthors.length > 0 ? sortedAuthors.map(k => authorData[k]) : [0],
+                        backgroundColor: '#ec4899',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { title: { display: true, text: 'Top Nhân viên (Leaderboard)' } }
+                }
+            });
+        }
+
+        // 4. Bottleneck Radar/Bar Chart
+        if (bottleneckChartInstance) bottleneckChartInstance.destroy();
+        const ctxBottle = document.getElementById('bottleneckChart');
+        if (ctxBottle) {
+            const sortedSteps = Object.keys(stepData).sort((a,b) => stepData[b] - stepData[a]).slice(0, 5); // Top 5 bottlenecks
+            bottleneckChartInstance = new Chart(ctxBottle, {
+                type: 'bar',
+                data: {
+                    labels: sortedSteps.length > 0 ? sortedSteps.map(s => `Bước ${parseInt(s)+1}`) : ['Không có'],
+                    datasets: [{
+                        label: 'Số gói đang kẹt',
+                        data: sortedSteps.length > 0 ? sortedSteps.map(k => stepData[k]) : [0],
+                        backgroundColor: '#ef4444',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { title: { display: true, text: 'Nút thắt Tiến độ (Bottleneck)' } }
+                }
+            });
         }
     };
 
