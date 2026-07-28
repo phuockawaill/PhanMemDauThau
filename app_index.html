@@ -142,6 +142,16 @@
 <body class="dark-mode">
     <!-- AI Network Background -->
     <canvas id="ai-network-canvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; opacity: 0.4; pointer-events: none;"></canvas>
+    <!-- Force dark theme before any JS loads (prevents flash of light mode) -->
+    <script>
+        (function() {
+            var saved = localStorage.getItem('agy-theme');
+            if (!saved || saved === 'light') {
+                localStorage.setItem('agy-theme', 'dark');
+                document.body.className = 'dark-mode';
+            }
+        })();
+    </script>
 
     <!-- ================================================================ -->
     <!-- LOGIN SCREEN OVERLAY -->
@@ -715,7 +725,7 @@
         </div>
     </div>
 
-    <script src="app_v7.js?v=202607281603"></script>
+    <script src="app_v7.js?v=202607281641"></script>
 
     <!-- Floating AI Assistant -->
     <div id="ai-copilot-container" style="position: fixed; bottom: 30px; right: 30px; z-index: 9999; display: flex; flex-direction: column; align-items: flex-end; font-family: 'Inter', sans-serif;">
