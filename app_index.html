@@ -10,18 +10,34 @@
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="style_v2.css?v=202607281603">
+    <link rel="stylesheet" href="style_v2.css?v=202607281645">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 
     <style>
-        /* =============================================
-           AI AESTHETICS - COMPLETE STYLE SYSTEM
-        ============================================= */
+        /* =================================================================
+           AI LIGHT THEME - PREMIUM INTELLIGENT DESIGN
+        ================================================================= */
 
-        /* MENU CHÍNH - clearly separated from filters */
+        /* Global AI tint for body */
+        body.light-mode {
+            --ai-primary: #4f46e5;
+            --ai-primary-soft: rgba(79, 70, 229, 0.08);
+            --ai-secondary: #7c3aed;
+            --ai-accent: #06b6d4;
+            --ai-glow: rgba(79, 70, 229, 0.15);
+            --bg-app: #f5f7ff;
+            --bg-sidebar: #ffffff;
+        }
+
+        /* Subtle AI gradient on the overall background */
+        body.light-mode .portal-screen {
+            background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 50%, #f0fbff 100%) !important;
+        }
+
+        /* MENU CHÍNH - clearly separated */
         #sidebar-menu-main {
-            border-bottom: 1px solid rgba(255,255,255,0.07);
+            border-bottom: 1px solid rgba(79,70,229,0.1);
             padding-bottom: 16px;
             margin-bottom: 8px;
         }
@@ -33,86 +49,122 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            color: var(--text-muted);
+            color: #64748b;
             transition: all 0.2s ease;
             font-size: 14px;
             font-weight: 500;
             border-left: 3px solid transparent;
             position: relative;
-            overflow: hidden;
         }
-        .menu-item::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(90deg, rgba(59,130,246,0.08) 0%, transparent 100%);
-            opacity: 0;
-            transition: opacity 0.2s;
+        .menu-item:hover {
+            background: rgba(79,70,229,0.06);
+            color: #4f46e5;
+            border-left-color: rgba(79,70,229,0.3);
         }
-        .menu-item:hover { color: var(--text-main); border-left-color: rgba(99,102,241,0.3); }
-        .menu-item:hover::before { opacity: 1; }
         .menu-item.active {
-            background: linear-gradient(90deg, rgba(59,130,246,0.2) 0%, rgba(139,92,246,0.05) 100%);
-            color: #93c5fd;
+            background: linear-gradient(90deg, rgba(79,70,229,0.12) 0%, rgba(124,58,237,0.04) 100%);
+            color: #4f46e5;
             font-weight: 700;
-            border-left: 3px solid #3b82f6;
-            box-shadow: inset 0 0 0 1px rgba(59,130,246,0.15);
+            border-left: 3px solid #4f46e5;
+            box-shadow: inset 0 0 0 1px rgba(79,70,229,0.1);
         }
         .menu-item i { width: 18px; height: 18px; flex-shrink: 0; }
 
-        /* FILTER ITEMS - separated section below menu */
+        /* LỌC THEO / SẮP XẾP section titles */
         .filter-section:not(#sidebar-menu-main) {
             padding-top: 8px;
         }
         .filter-title {
             font-size: 10px !important;
             letter-spacing: 1.5px !important;
-            text-transform: uppercase;
-            color: rgba(148,163,184,0.6) !important;
+            color: rgba(100,116,139,0.7) !important;
             padding: 0 4px 8px 4px;
             display: block;
+            font-weight: 600;
         }
 
-        /* GLASSMORPHISM SIDEBAR */
+        /* FILTER ITEMS - match same style as menu items */
+        .filter-item {
+            border-left: 3px solid transparent !important;
+        }
+        .filter-item:hover {
+            background: rgba(79,70,229,0.06) !important;
+            color: #4f46e5 !important;
+            border-left-color: rgba(79,70,229,0.3) !important;
+        }
+        .filter-item.active {
+            background: linear-gradient(90deg, rgba(79,70,229,0.1) 0%, rgba(79,70,229,0) 100%) !important;
+            color: #4f46e5 !important;
+            font-weight: 700 !important;
+            border-left: 3px solid #4f46e5 !important;
+        }
+
+        /* SIDEBAR - Premium AI light glass */
         .portal-filters {
-            background: rgba(15,23,42,0.7) !important;
+            background: rgba(255,255,255,0.85) !important;
             backdrop-filter: blur(20px) !important;
             -webkit-backdrop-filter: blur(20px) !important;
-            border-right: 1px solid rgba(59,130,246,0.1) !important;
-            box-shadow: 4px 0 24px rgba(0,0,0,0.3) !important;
-        }
-        .portal-header {
-            background: rgba(10,17,32,0.8) !important;
-            backdrop-filter: blur(20px) !important;
-            -webkit-backdrop-filter: blur(20px) !important;
-            border-bottom: 1px solid rgba(59,130,246,0.1) !important;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.3) !important;
-        }
-        .portal-toolbar {
-            background: rgba(15,23,42,0.6) !important;
-            backdrop-filter: blur(16px) !important;
-            -webkit-backdrop-filter: blur(16px) !important;
-            border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+            border-right: 1px solid rgba(79,70,229,0.1) !important;
+            box-shadow: 4px 0 24px rgba(79,70,229,0.06) !important;
         }
 
-        /* PACKAGE CARDS - glassmorphism with neon hover */
+        /* HEADER - AI glass */
+        .portal-header {
+            background: rgba(255,255,255,0.90) !important;
+            backdrop-filter: blur(20px) !important;
+            -webkit-backdrop-filter: blur(20px) !important;
+            border-bottom: 1px solid rgba(79,70,229,0.08) !important;
+            box-shadow: 0 2px 20px rgba(79,70,229,0.06) !important;
+        }
+
+        /* TOOLBAR */
+        .portal-toolbar {
+            background: rgba(248,250,255,0.9) !important;
+            backdrop-filter: blur(12px) !important;
+            border-bottom: 1px solid rgba(79,70,229,0.06) !important;
+        }
+
+        /* PACKAGE CARDS - clean AI glass */
         .pkg-card {
-            background: rgba(30,41,59,0.5) !important;
-            backdrop-filter: blur(10px) !important;
-            -webkit-backdrop-filter: blur(10px) !important;
-            border: 1px solid rgba(255,255,255,0.06) !important;
-            transition: all 0.3s cubic-bezier(0.4,0,0.2,1) !important;
+            background: rgba(255,255,255,0.9) !important;
+            border: 1px solid rgba(79,70,229,0.08) !important;
+            box-shadow: 0 2px 12px rgba(79,70,229,0.04), 0 1px 3px rgba(0,0,0,0.04) !important;
+            transition: all 0.25s cubic-bezier(0.4,0,0.2,1) !important;
+            backdrop-filter: blur(8px) !important;
         }
         .pkg-card:hover {
-            border-color: rgba(99,102,241,0.5) !important;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(99,102,241,0.2), 0 0 20px rgba(59,130,246,0.1) !important;
+            border-color: rgba(79,70,229,0.3) !important;
+            box-shadow: 0 8px 30px rgba(79,70,229,0.12), 0 2px 8px rgba(0,0,0,0.06), 0 0 0 1px rgba(79,70,229,0.1) !important;
             transform: translateY(-3px) !important;
         }
 
-        /* AI CARET BLINK */
+        /* Portal logo AI gradient */
+        .portal-logo {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+            box-shadow: 0 4px 15px rgba(79,70,229,0.3) !important;
+        }
+
+        /* AI canvas - very subtle on light bg */
+        #ai-network-canvas {
+            opacity: 0.12 !important;
+        }
+
+        /* AI COPILOT CHAT PANEL - light glass */
+        #ai-chat-panel {
+            background: rgba(255,255,255,0.92) !important;
+            border: 1px solid rgba(79,70,229,0.15) !important;
+            box-shadow: 0 20px 60px rgba(79,70,229,0.15), 0 4px 20px rgba(0,0,0,0.08) !important;
+        }
+        #ai-chat-body .ai-msg {
+            background: rgba(79,70,229,0.05);
+            border: 1px solid rgba(79,70,229,0.1);
+            color: #1e293b;
+        }
+
+        /* AI blink caret */
         .ai-caret {
             display: inline-block;
-            border-right: 2px solid #60a5fa;
+            border-right: 2px solid #4f46e5;
             animation: ai-blink-caret 0.75s step-end infinite;
         }
         @keyframes ai-blink-caret {
@@ -127,28 +179,19 @@
             0% { transform: scale(1); opacity: 0.6; }
             100% { transform: scale(1.8); opacity: 0; }
         }
-        .ai-msg {
-            background: rgba(30,41,59,0.6);
-            border: 1px solid rgba(59,130,246,0.2);
-            padding: 12px 16px;
-            border-radius: 12px 12px 12px 2px;
-            color: rgba(255,255,255,0.9);
-            font-size: 13px;
-            line-height: 1.6;
-        }
     </style>
 
 </head>
-<body class="dark-mode">
+<body class="light-mode">
     <!-- AI Network Background -->
     <canvas id="ai-network-canvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; opacity: 0.4; pointer-events: none;"></canvas>
-    <!-- Force dark theme before any JS loads (prevents flash of light mode) -->
+    <!-- Force light theme by default (AI Light Mode) -->
     <script>
         (function() {
             var saved = localStorage.getItem('agy-theme');
-            if (!saved || saved === 'light') {
-                localStorage.setItem('agy-theme', 'dark');
-                document.body.className = 'dark-mode';
+            if (!saved || saved === 'dark') {
+                localStorage.setItem('agy-theme', 'light');
+                document.body.className = 'light-mode';
             }
         })();
     </script>
@@ -725,7 +768,7 @@
         </div>
     </div>
 
-    <script src="app_v7.js?v=202607281641"></script>
+    <script src="app_v7.js?v=202607281645"></script>
 
     <!-- Floating AI Assistant -->
     <div id="ai-copilot-container" style="position: fixed; bottom: 30px; right: 30px; z-index: 9999; display: flex; flex-direction: column; align-items: flex-end; font-family: 'Inter', sans-serif;">

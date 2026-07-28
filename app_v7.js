@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function initTheme() {
-        const savedTheme = localStorage.getItem('agy-theme') || 'dark';
+        const savedTheme = localStorage.getItem('agy-theme') || 'light';
         setThemeUI(savedTheme === 'dark');
     }
 
