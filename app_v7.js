@@ -2920,337 +2920,222 @@ function exportToTxt() {
         });
     }
 
-});
-
-
-const chuSo = ["không", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"];
-
-function docChuc(so, daydu) {
-    let chuoi = "";
-    let chuc = Math.floor(so / 10);
-    let donvi = so % 10;
-    if (chuc > 1) {
-        chuoi = " " + chuSo[chuc] + " mươi";
-        if (donvi == 1) {
-            chuoi += " mốt";
-        }
-    } else if (chuc == 1) {
-        chuoi = " mười";
-        if (donvi == 1) {
-            chuoi += " một";
-        }
-    } else if (daydu && donvi > 0) {
-        chuoi = " lẻ";
-    }
-    if (donvi == 5 && chuc >= 1) {
-        chuoi += " lăm";
-    } else if (donvi > 1 || (donvi == 1 && chuc == 0)) {
-        chuoi += " " + chuSo[donvi];
-    }
-    return chuoi;
-}
-
-function docTram(so, daydu) {
-    let chuoi = "";
-    let tram = Math.floor(so / 100);
-    so = so % 100;
-    if (daydu || tram > 0) {
-        chuoi = " " + chuSo[tram] + " trăm";
-        chuoi += docChuc(so, true);
-    } else {
-        chuoi = docChuc(so, false);
-    }
-    return chuoi;
-}
-
-function docTrieu(so, daydu) {
-    let chuoi = "";
-    let trieu = Math.floor(so / 1000000);
-    so = so % 1000000;
-    if (trieu > 0) {
-        chuoi = docTram(trieu, daydu) + " triệu";
-        daydu = true;
-    }
-    let nghin = Math.floor(so / 1000);
-    so = so % 1000;
-    if (nghin > 0) {
-        chuoi += docTram(nghin, daydu) + " nghìn";
-        daydu = true;
-    }
-    if (so > 0) {
-        chuoi += docTram(so, daydu);
-    }
-    return chuoi;
-}
-
-function docSo(so) {
-    if (so == 0) return chuSo[0];
-    let chuoi = "", hauto = "";
-    do {
-        let ty = so % 1000000000;
-        so = Math.floor(so / 1000000000);
-        if (so > 0) {
-            chuoi = docTrieu(ty, true) + hauto + chuoi;
-        } else {
-            chuoi = docTrieu(ty, false) + hauto + chuoi;
-        }
-        hauto = " tỷ";
-    } while (so > 0);
-    return chuoi.trim();
-}
-
-function docTien(so) {
-    if (so === 0) return "Không đồng";
-    if (!so || isNaN(so)) return "";
-    let str = docSo(so).trim();
-    // replace double spaces
-    str = str.replace(/\s+/g, ' ');
-    // Capitalize first letter
-    str = str.charAt(0).toUpperCase() + str.slice(1);
-    return str + " đồng";
-}
-
-
-
-window.SYNTAX_OK = true;
-
-
-    // --- USER MANAGEMENT LOGIC ---
-    setTimeout(() => {
-        const menuUsers = document.getElementById('menu-users');
-        if (menuUsers) {
-            menuUsers.addEventListener('click', () => {
-                const menuLibrary = document.getElementById('menu-library');
-                const menuDashboard = document.getElementById('menu-dashboard');
-                const portalToolbar = document.querySelector('.portal-toolbar');
-                const packagesContainer = document.getElementById('packages-container');
-                let ds = document.getElementById('dashboard-section');
-                
-                if (menuLibrary) menuLibrary.classList.remove('active');
-                if (menuDashboard) menuDashboard.classList.remove('active');
-                menuUsers.classList.add('active');
-
-                if (portalToolbar) portalToolbar.style.display = 'none';
-                if (packagesContainer) packagesContainer.style.display = 'none';
-                if (ds) ds.style.display = 'none';
-
-                let us = document.getElementById('users-section');
-                if (!us) {
-                    us = document.createElement('div');
-                    us.id = 'users-section';
-                    us.style.padding = '20px';
-                    us.style.color = 'var(--text-main)';
-                    us.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                            <h2 style="margin: 0;">Quản lý Nhân sự</h2>
-                            <button id="add-user-btn" class="btn btn-primary" style="padding: 8px 16px; border-radius: 8px; border: none; background: #3b82f6; color: white; cursor: pointer;">+ Thêm Tài khoản</button>
-                        </div>
-                        <div style="background: var(--bg-sidebar); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden;">
-                            <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                                <thead>
-                                    <tr style="border-bottom: 1px solid var(--border-color); background: rgba(255,255,255,0.02);">
-                                        <th style="padding: 16px;">Tên đăng nhập</th>
-                                        <th style="padding: 16px;">Tên hiển thị</th>
-                                        <th style="padding: 16px;">Quyền hạn</th>
-                                        <th style="padding: 16px;">Hành động</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="users-tbody">
-                                    <tr><td colspan="4" style="padding: 20px; text-align: center;">Đang tải...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    `;
-                    const mainPortal = document.querySelector('.portal-main');
-                    if (mainPortal) {
-                        mainPortal.insertBefore(us, mainPortal.firstChild);
-                    }
-                    
-                    document.getElementById('add-user-btn').addEventListener('click', () => {
-                        const uname = prompt("Nhập tên đăng nhập mới:");
-                        if (!uname) return;
-                        const pwd = prompt("Nhập mật khẩu mới:");
-                        if (!pwd) return;
-                        const dname = prompt("Nhập tên hiển thị:");
-                        if (!dname) return;
-                        const role = confirm("Tài khoản này là Admin?") ? 'admin' : 'user';
-                        
-                        fetch('/api/users').then(r=>r.json()).then(data => {
-                            let users = data.users || [];
-                            if (users.find(u => u.username === uname)) {
-                                alert("Tên đăng nhập đã tồn tại!"); return;
-                            }
-                            users.push({username: uname, password: pwd, displayName: dname, role: role});
-                            fetch('/api/users', {
-                                method: 'POST',
-                                headers: {'Content-Type': 'application/json'},
-                                body: JSON.stringify({users: users})
-                            }).then(() => renderUsersTable());
-                        });
-                    });
-                }
-                us.style.display = 'block';
-                renderUsersTable();
-            });
-        }
-    }, 500);
-
-    function renderUsersTable() {
-        const tbody = document.getElementById('users-tbody');
-        if (!tbody) return;
-        fetch('/api/users').then(r=>r.json()).then(data => {
-            if (data.success && data.users) {
-                tbody.innerHTML = data.users.map((u, i) => `
-                    <tr style="border-bottom: 1px solid var(--border-color);">
-                        <td style="padding: 16px; font-weight: 600;">${u.username}</td>
-                        <td style="padding: 16px;">${u.displayName}</td>
-                        <td style="padding: 16px;">
-                            <span style="padding: 4px 8px; border-radius: 4px; font-size: 12px; background: ${u.role === 'admin' ? 'rgba(239,68,68,0.2)' : 'rgba(59,130,246,0.2)'}; color: ${u.role === 'admin' ? '#fca5a5' : '#93c5fd'};">
-                                ${u.role === 'admin' ? 'Quản trị viên' : 'Nhân viên'}
-                            </span>
-                        </td>
-                        <td style="padding: 16px;">
-                            <button onclick="deleteUser('${u.username}')" style="background: rgba(239,68,68,0.2); color: #fca5a5; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer;">Xóa</button>
-                        </td>
-                    </tr>
-                `).join('');
-            }
-        });
-    }
-
-    window.deleteUser = function(username) {
-        if (username === 'admin') {
-            alert("Không thể xóa tài khoản admin gốc!");
-            return;
-        }
-        if (confirm(`Bạn có chắc muốn xóa tài khoản ${username}?`)) {
-            fetch('/api/users').then(r=>r.json()).then(data => {
-                let users = data.users || [];
-                users = users.filter(u => u.username !== username);
-                fetch('/api/users', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({users: users})
-                }).then(() => renderUsersTable());
-            });
-        }
-    };
-
 
     // =========================================================================
-    // AI NEURAL NETWORK BACKGROUND (CANVAS)
+    // AI NEURAL NETWORK BACKGROUND
     // =========================================================================
     (function initAINetwork() {
         const canvas = document.getElementById('ai-network-canvas');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
-        let width, height;
-        let particles = [];
-        
+        let W, H, particles = [];
+
         function resize() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
+            W = canvas.width = window.innerWidth;
+            H = canvas.height = window.innerHeight;
         }
         window.addEventListener('resize', resize);
         resize();
 
-        class Particle {
-            constructor() {
-                this.x = Math.random() * width;
-                this.y = Math.random() * height;
-                this.vx = (Math.random() - 0.5) * 0.5;
-                this.vy = (Math.random() - 0.5) * 0.5;
-                this.radius = Math.random() * 2 + 1;
+        class Dot {
+            constructor() { this.reset(); }
+            reset() {
+                this.x = Math.random() * W;
+                this.y = Math.random() * H;
+                this.vx = (Math.random() - 0.5) * 0.6;
+                this.vy = (Math.random() - 0.5) * 0.6;
+                this.r  = Math.random() * 2 + 1;
             }
             update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                if (this.x < 0 || this.x > width) this.vx = -this.vx;
-                if (this.y < 0 || this.y > height) this.vy = -this.vy;
+                this.x += this.vx; this.y += this.vy;
+                if (this.x < 0 || this.x > W) this.vx *= -1;
+                if (this.y < 0 || this.y > H) this.vy *= -1;
             }
             draw() {
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(96, 165, 250, 0.4)'; // blue-400
+                ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(96,165,250,0.5)';
                 ctx.fill();
             }
         }
 
-        for (let i = 0; i < 60; i++) particles.push(new Particle());
+        for (let i = 0; i < 55; i++) particles.push(new Dot());
 
-        function animate() {
-            ctx.clearRect(0, 0, width, height);
+        (function loop() {
+            ctx.clearRect(0, 0, W, H);
             for (let i = 0; i < particles.length; i++) {
                 particles[i].update();
                 particles[i].draw();
                 for (let j = i + 1; j < particles.length; j++) {
                     const dx = particles[i].x - particles[j].x;
                     const dy = particles[i].y - particles[j].y;
-                    const dist = Math.sqrt(dx*dx + dy*dy);
-                    if (dist < 150) {
+                    const d  = Math.sqrt(dx*dx + dy*dy);
+                    if (d < 140) {
                         ctx.beginPath();
                         ctx.moveTo(particles[i].x, particles[i].y);
                         ctx.lineTo(particles[j].x, particles[j].y);
-                        ctx.strokeStyle = `rgba(139, 92, 246, ${1 - dist/150})`; // purple-500
+                        ctx.strokeStyle = `rgba(139,92,246,${(1 - d/140)*0.5})`;
                         ctx.lineWidth = 0.5;
                         ctx.stroke();
                     }
                 }
             }
-            requestAnimationFrame(animate);
-        }
-        animate();
+            requestAnimationFrame(loop);
+        })();
     })();
 
     // =========================================================================
-    // AI COPILOT LOGIC
+    // AI COPILOT CHAT
     // =========================================================================
     (function initAICopilot() {
-        const btn = document.getElementById('ai-copilot-btn');
-        const panel = document.getElementById('ai-chat-panel');
+        const btn      = document.getElementById('ai-copilot-btn');
+        const panel    = document.getElementById('ai-chat-panel');
         const closeBtn = document.getElementById('close-ai-chat');
         const chatBody = document.getElementById('ai-chat-body');
-        let isOpen = false;
-
         if (!btn || !panel) return;
+        let open = false;
 
-        function toggleChat() {
-            isOpen = !isOpen;
-            if (isOpen) {
+        function toggle() {
+            open = !open;
+            if (open) {
                 panel.style.display = 'flex';
-                // slight delay to allow display:flex to apply before transition
-                setTimeout(() => {
-                    panel.style.transform = 'scale(1)';
-                    panel.style.opacity = '1';
-                }, 10);
-                
-                // Welcome msg
-                if (chatBody.children.length === 0) {
-                    const msg = document.createElement('div');
-                    msg.className = 'ai-msg';
-                    chatBody.appendChild(msg);
-                    
-                    const text = "Chào sếp! Hệ thống VNPT AI đã sẵn sàng. Sếp cần phân tích dữ liệu nào hôm nay?";
-                    let i = 0;
-                    msg.innerHTML = '<span id="ai-typing-text"></span><span style="border-right: 2px solid #60a5fa; animation: ai-blink-caret .75s step-end infinite;">&nbsp;</span>';
-                    const target = msg.querySelector('#ai-typing-text');
-                    
-                    function typeWriter() {
-                        if (i < text.length) {
-                            target.innerHTML += text.charAt(i);
-                            i++;
-                            setTimeout(typeWriter, 30);
+                setTimeout(() => { panel.style.transform = 'scale(1)'; panel.style.opacity = '1'; }, 10);
+                if (chatBody && chatBody.children.length === 0) {
+                    const div = document.createElement('div');
+                    div.className = 'ai-msg';
+                    chatBody.appendChild(div);
+                    const greetings = [
+                        "Chào sếp! Hệ thống VNPT AI đã sẵn sàng 🚀",
+                        "Hôm nay sếp muốn phân tích dữ liệu gói thầu nào?",
+                        "Tôi có thể giúp sếp thống kê, lọc hồ sơ hoặc xuất báo cáo."
+                    ];
+                    let gi = 0, ti = 0;
+                    div.innerHTML = '<span id="ai-t"></span><span class="ai-caret">|</span>';
+                    const target = div.querySelector('#ai-t');
+                    function type() {
+                        if (gi >= greetings.length) return;
+                        if (ti < greetings[gi].length) {
+                            target.innerHTML += greetings[gi][ti++];
+                            setTimeout(type, 28);
+                        } else {
+                            ti = 0; gi++;
+                            if (gi < greetings.length) {
+                                target.innerHTML += '<br>';
+                                setTimeout(type, 400);
+                            }
                         }
                     }
-                    setTimeout(typeWriter, 300);
+                    setTimeout(type, 300);
+                    lucide.createIcons();
                 }
             } else {
-                panel.style.transform = 'scale(0)';
-                panel.style.opacity = '0';
+                panel.style.transform = 'scale(0)'; panel.style.opacity = '0';
                 setTimeout(() => { panel.style.display = 'none'; }, 300);
             }
         }
-
-        btn.addEventListener('click', toggleChat);
-        closeBtn.addEventListener('click', toggleChat);
+        btn.addEventListener('click', toggle);
+        if (closeBtn) closeBtn.addEventListener('click', toggle);
     })();
+
+    // =========================================================================
+    // USER MANAGEMENT MENU
+    // =========================================================================
+    setTimeout(() => {
+        const menuUsers = document.getElementById('menu-users');
+        if (!menuUsers) return;
+
+        menuUsers.addEventListener('click', () => {
+            const menuLibrary   = document.getElementById('menu-library');
+            const menuDashboard = document.getElementById('menu-dashboard');
+            const portalToolbar = document.querySelector('.portal-toolbar');
+            const pkgContainer  = document.getElementById('packages-container');
+            const ds            = document.getElementById('dashboard-section');
+
+            [menuLibrary, menuDashboard].forEach(m => m && m.classList.remove('active'));
+            menuUsers.classList.add('active');
+
+            if (portalToolbar) portalToolbar.style.display = 'none';
+            if (pkgContainer)  pkgContainer.style.display  = 'none';
+            if (ds)            ds.style.display             = 'none';
+
+            let us = document.getElementById('users-section');
+            if (!us) {
+                us = document.createElement('div');
+                us.id = 'users-section';
+                us.style.cssText = 'padding:24px; color:var(--text-main);';
+                us.innerHTML = `
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+                        <h2 style="margin:0;font-size:20px;">Quản lý Nhân sự</h2>
+                        <button id="add-user-btn" style="padding:10px 20px;border-radius:8px;border:none;background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:white;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;">
+                            <i data-lucide="user-plus" style="width:16px;height:16px;"></i> Thêm Tài khoản
+                        </button>
+                    </div>
+                    <div style="background:var(--bg-sidebar);border:1px solid var(--border-color);border-radius:12px;overflow:hidden;">
+                        <table style="width:100%;border-collapse:collapse;text-align:left;">
+                            <thead><tr style="border-bottom:1px solid var(--border-color);background:rgba(59,130,246,0.05);">
+                                <th style="padding:14px 16px;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);">Tên đăng nhập</th>
+                                <th style="padding:14px 16px;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);">Tên hiển thị</th>
+                                <th style="padding:14px 16px;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);">Quyền hạn</th>
+                                <th style="padding:14px 16px;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);">Hành động</th>
+                            </tr></thead>
+                            <tbody id="users-tbody"><tr><td colspan="4" style="padding:20px;text-align:center;color:var(--text-muted);">Đang tải...</td></tr></tbody>
+                        </table>
+                    </div>`;
+                const pm = document.querySelector('.portal-main') || document.querySelector('.portal-body');
+                if (pm) pm.insertBefore(us, pm.firstChild);
+
+                lucide.createIcons();
+
+                document.getElementById('add-user-btn').addEventListener('click', () => {
+                    const un = prompt('Tên đăng nhập mới:'); if (!un) return;
+                    const pw = prompt('Mật khẩu:'); if (!pw) return;
+                    const dn = prompt('Tên hiển thị:') || un;
+                    const isAdmin = confirm('Cấp quyền Admin cho tài khoản này?');
+                    fetch('/api/users').then(r=>r.json()).then(d => {
+                        const users = d.users || [];
+                        if (users.find(u => u.username === un)) { alert('Tên đăng nhập đã tồn tại!'); return; }
+                        users.push({ username: un, password: pw, displayName: dn, role: isAdmin ? 'admin' : 'user' });
+                        fetch('/api/users', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({users}) })
+                            .then(() => window.renderUsersTable());
+                    });
+                });
+            }
+            us.style.display = 'block';
+            window.renderUsersTable();
+        });
+    }, 600);
+
+    window.renderUsersTable = function() {
+        const tbody = document.getElementById('users-tbody');
+        if (!tbody) return;
+        fetch('/api/users').then(r=>r.json()).then(d => {
+            if (!d.success || !d.users) return;
+            tbody.innerHTML = d.users.map(u => `
+                <tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:14px 16px;font-weight:600;">${u.username}</td>
+                    <td style="padding:14px 16px;">${u.displayName}</td>
+                    <td style="padding:14px 16px;">
+                        <span style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;background:${u.role==='admin'?'rgba(239,68,68,0.15)':'rgba(59,130,246,0.15)'};color:${u.role==='admin'?'#f87171':'#60a5fa'};">
+                            ${u.role==='admin'?'Admin':'Nhân viên'}
+                        </span>
+                    </td>
+                    <td style="padding:14px 16px;">
+                        ${u.username !== 'admin' ? `<button onclick="deleteUser('${u.username}')" style="padding:6px 12px;border-radius:6px;border:none;background:rgba(239,68,68,0.1);color:#f87171;cursor:pointer;font-weight:600;">Xóa</button>` : '<span style="color:var(--text-muted);font-size:12px;">Được bảo vệ</span>'}
+                    </td>
+                </tr>`).join('');
+        }).catch(() => {
+            if (tbody) tbody.innerHTML = '<tr><td colspan="4" style="padding:20px;color:var(--text-muted);">Chức năng quản lý user cần Database Vercel KV.</td></tr>';
+        });
+    };
+
+    window.deleteUser = function(username) {
+        if (!confirm(`Xóa tài khoản "${username}"?`)) return;
+        fetch('/api/users').then(r=>r.json()).then(d => {
+            const users = (d.users || []).filter(u => u.username !== username);
+            fetch('/api/users', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({users}) })
+                .then(() => window.renderUsersTable());
+        });
+    };
+
+
+});

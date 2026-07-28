@@ -15,23 +15,131 @@
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 
     <style>
+        /* =============================================
+           AI AESTHETICS - COMPLETE STYLE SYSTEM
+        ============================================= */
+
+        /* MENU CHÍNH - clearly separated from filters */
+        #sidebar-menu-main {
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+            padding-bottom: 16px;
+            margin-bottom: 8px;
+        }
         .menu-item {
-            padding: 10px 14px; margin-bottom: 6px; border-radius: 8px;
-            cursor: pointer; display: flex; align-items: center; gap: 10px;
-            color: var(--text-muted); transition: all 0.2s; font-size: 14px;
+            padding: 11px 14px;
+            margin-bottom: 4px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+            font-size: 14px;
+            font-weight: 500;
             border-left: 3px solid transparent;
+            position: relative;
+            overflow: hidden;
         }
-        .menu-item:hover { background: rgba(255,255,255,0.05); color: var(--text-main); }
-        .menu-item.active { 
-            background: linear-gradient(90deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0) 100%); 
-            color: var(--primary); font-weight: 700; 
-            border-left: 3px solid var(--primary); 
+        .menu-item::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, rgba(59,130,246,0.08) 0%, transparent 100%);
+            opacity: 0;
+            transition: opacity 0.2s;
         }
-        .menu-item i { width: 18px; height: 18px; }
+        .menu-item:hover { color: var(--text-main); border-left-color: rgba(99,102,241,0.3); }
+        .menu-item:hover::before { opacity: 1; }
+        .menu-item.active {
+            background: linear-gradient(90deg, rgba(59,130,246,0.2) 0%, rgba(139,92,246,0.05) 100%);
+            color: #93c5fd;
+            font-weight: 700;
+            border-left: 3px solid #3b82f6;
+            box-shadow: inset 0 0 0 1px rgba(59,130,246,0.15);
+        }
+        .menu-item i { width: 18px; height: 18px; flex-shrink: 0; }
+
+        /* FILTER ITEMS - separated section below menu */
+        .filter-section:not(#sidebar-menu-main) {
+            padding-top: 8px;
+        }
+        .filter-title {
+            font-size: 10px !important;
+            letter-spacing: 1.5px !important;
+            text-transform: uppercase;
+            color: rgba(148,163,184,0.6) !important;
+            padding: 0 4px 8px 4px;
+            display: block;
+        }
+
+        /* GLASSMORPHISM SIDEBAR */
+        .portal-filters {
+            background: rgba(15,23,42,0.7) !important;
+            backdrop-filter: blur(20px) !important;
+            -webkit-backdrop-filter: blur(20px) !important;
+            border-right: 1px solid rgba(59,130,246,0.1) !important;
+            box-shadow: 4px 0 24px rgba(0,0,0,0.3) !important;
+        }
+        .portal-header {
+            background: rgba(10,17,32,0.8) !important;
+            backdrop-filter: blur(20px) !important;
+            -webkit-backdrop-filter: blur(20px) !important;
+            border-bottom: 1px solid rgba(59,130,246,0.1) !important;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.3) !important;
+        }
+        .portal-toolbar {
+            background: rgba(15,23,42,0.6) !important;
+            backdrop-filter: blur(16px) !important;
+            -webkit-backdrop-filter: blur(16px) !important;
+            border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+        }
+
+        /* PACKAGE CARDS - glassmorphism with neon hover */
+        .pkg-card {
+            background: rgba(30,41,59,0.5) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            border: 1px solid rgba(255,255,255,0.06) !important;
+            transition: all 0.3s cubic-bezier(0.4,0,0.2,1) !important;
+        }
+        .pkg-card:hover {
+            border-color: rgba(99,102,241,0.5) !important;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(99,102,241,0.2), 0 0 20px rgba(59,130,246,0.1) !important;
+            transform: translateY(-3px) !important;
+        }
+
+        /* AI CARET BLINK */
+        .ai-caret {
+            display: inline-block;
+            border-right: 2px solid #60a5fa;
+            animation: ai-blink-caret 0.75s step-end infinite;
+        }
+        @keyframes ai-blink-caret {
+            from, to { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        @keyframes ai-pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        @keyframes ai-pulse-2 {
+            0% { transform: scale(1); opacity: 0.6; }
+            100% { transform: scale(1.8); opacity: 0; }
+        }
+        .ai-msg {
+            background: rgba(30,41,59,0.6);
+            border: 1px solid rgba(59,130,246,0.2);
+            padding: 12px 16px;
+            border-radius: 12px 12px 12px 2px;
+            color: rgba(255,255,255,0.9);
+            font-size: 13px;
+            line-height: 1.6;
+        }
     </style>
 
 </head>
-<body class="light-mode">
+<body class="dark-mode">
     <!-- AI Network Background -->
     <canvas id="ai-network-canvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; opacity: 0.4; pointer-events: none;"></canvas>
 
