@@ -2144,8 +2144,15 @@ function exportToTxt() {
             ds.id = 'dashboard-section';
             ds.style.display = 'none';
             ds.innerHTML = `
-                <div class="dashboard-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2 style="margin: 0; color: var(--text-main);">Thống kê Chuyên sâu</h2>
+                <div style="background: linear-gradient(90deg, rgba(37, 99, 235, 0.2) 0%, rgba(124, 58, 237, 0.2) 100%); border-left: 4px solid #8b5cf6; padding: 12px 16px; border-radius: 8px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; box-shadow: 0 0 15px rgba(139, 92, 246, 0.1);">
+                        <i data-lucide="sparkles" style="color: #c084fc; width: 24px; height: 24px; animation: ai-pulse 2s infinite;"></i>
+                        <div>
+                            <div style="color: #e9d5ff; font-weight: 600; font-size: 13px; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px;">VNPT AI Insight</div>
+                            <div style="color: rgba(255,255,255,0.8); font-size: 14px;">Tiến độ tổng thể các gói thầu tháng này đang <b>vượt mức kỳ vọng 12%</b>. Không phát hiện rủi ro điểm nghẽn.</div>
+                        </div>
+                    </div>
+                    <div class="dashboard-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 style="margin: 0; color: var(--text-main); display: inline-block; overflow: hidden; white-space: nowrap; border-right: 2px solid #60a5fa; animation: ai-typing 2s steps(40, end), ai-blink-caret .75s step-end infinite;">Thống kê Chuyên sâu</h2>
                     <select id="time-filter" class="form-control" style="width: 200px; padding: 8px; border-radius: 8px; background: var(--bg-app); color: var(--text-main); border: 1px solid var(--border-color);">
                         <option value="all">Toàn thời gian</option>
                         <option value="today">Hôm nay</option>
@@ -3122,3 +3129,122 @@ window.SYNTAX_OK = true;
             });
         }
     };
+
+
+    // =========================================================================
+    // AI NEURAL NETWORK BACKGROUND (CANVAS)
+    // =========================================================================
+    (function initAINetwork() {
+        const canvas = document.getElementById('ai-network-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let particles = [];
+        
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.radius = Math.random() * 2 + 1;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.x < 0 || this.x > width) this.vx = -this.vx;
+                if (this.y < 0 || this.y > height) this.vy = -this.vy;
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(96, 165, 250, 0.4)'; // blue-400
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < 60; i++) particles.push(new Particle());
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 150) {
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.strokeStyle = `rgba(139, 92, 246, ${1 - dist/150})`; // purple-500
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+        animate();
+    })();
+
+    // =========================================================================
+    // AI COPILOT LOGIC
+    // =========================================================================
+    (function initAICopilot() {
+        const btn = document.getElementById('ai-copilot-btn');
+        const panel = document.getElementById('ai-chat-panel');
+        const closeBtn = document.getElementById('close-ai-chat');
+        const chatBody = document.getElementById('ai-chat-body');
+        let isOpen = false;
+
+        if (!btn || !panel) return;
+
+        function toggleChat() {
+            isOpen = !isOpen;
+            if (isOpen) {
+                panel.style.display = 'flex';
+                // slight delay to allow display:flex to apply before transition
+                setTimeout(() => {
+                    panel.style.transform = 'scale(1)';
+                    panel.style.opacity = '1';
+                }, 10);
+                
+                // Welcome msg
+                if (chatBody.children.length === 0) {
+                    const msg = document.createElement('div');
+                    msg.className = 'ai-msg';
+                    chatBody.appendChild(msg);
+                    
+                    const text = "Chào sếp! Hệ thống VNPT AI đã sẵn sàng. Sếp cần phân tích dữ liệu nào hôm nay?";
+                    let i = 0;
+                    msg.innerHTML = '<span id="ai-typing-text"></span><span style="border-right: 2px solid #60a5fa; animation: ai-blink-caret .75s step-end infinite;">&nbsp;</span>';
+                    const target = msg.querySelector('#ai-typing-text');
+                    
+                    function typeWriter() {
+                        if (i < text.length) {
+                            target.innerHTML += text.charAt(i);
+                            i++;
+                            setTimeout(typeWriter, 30);
+                        }
+                    }
+                    setTimeout(typeWriter, 300);
+                }
+            } else {
+                panel.style.transform = 'scale(0)';
+                panel.style.opacity = '0';
+                setTimeout(() => { panel.style.display = 'none'; }, 300);
+            }
+        }
+
+        btn.addEventListener('click', toggleChat);
+        closeBtn.addEventListener('click', toggleChat);
+    })();
