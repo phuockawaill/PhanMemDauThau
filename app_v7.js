@@ -2080,7 +2080,6 @@ function exportToTxt() {
     const menuLibrary = document.getElementById('menu-library');
     const menuDashboard = document.getElementById('menu-dashboard');
     const portalToolbar = document.querySelector('.portal-toolbar');
-    const packagesContainer = document.getElementById('packages-container');
     const filterSections = document.querySelectorAll('.filter-section:not(#sidebar-menu-main)');
 
     function ensureDashboardSection() {
@@ -2199,88 +2198,7 @@ function exportToTxt() {
         document.head.appendChild(script);
     }
 
-    // Ensure Dashboard and Export buttons exist (Cache busting fallback)
-    const portalActions = document.querySelector('.portal-actions');
-    if (portalActions && !document.getElementById('portal-dashboard-btn')) {
-        
-        
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-
-        // Attach events
-        
-                }
-            }, 100);
-
-                if (typeof renderDashboard === 'function') {
-                    if (typeof Chart === 'undefined') {
-                        setTimeout(renderDashboard, 1000);
-                    } else {
-                        renderDashboard();
-                    }
-                }
-
-            } else {
-                ds.style.display = 'none';
-            }
-        });
-
-        exportBtn.addEventListener('click', () => {
-            
-            if (typeof XLSX === 'undefined') {
-                showFloatingNotice('Đang tải công cụ Xuất Excel, vui lòng thử lại sau 2 giây...', 'warning');
-                return;
-            }
-            const pkgs = window.allPackages || [];
-
-            if (pkgs.length === 0) {
-                showFloatingNotice('Không có dữ liệu để xuất', 'warning');
-                return;
-            }
-            const data = pkgs.map((pkg, index) => {
-                const total = typeof templates !== 'undefined' && templates.length > 0 ? templates.length : 17;
-                const completedCount = pkg.completedSteps ? pkg.completedSteps.length : 0;
-                let status = 'Mới tạo';
-                if (completedCount >= total) status = 'Hoàn thành';
-                else if (completedCount > 0) status = 'Đang làm';
-                return {
-                    'STT': index + 1,
-                    'Tên gói thầu': pkg.name,
-                    'Người tạo': pkg.author || 'Unknown',
-                    'Tiến độ': `${completedCount}/${total} bước`,
-                    'Trạng thái': status,
-                    'Cập nhật cuối': pkg.updatedAt ? new Date(pkg.updatedAt).toLocaleString('vi-VN') : ''
-                };
-            });
-            const ws = XLSX.utils.json_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "DanhSachGoiThau");
-            XLSX.writeFile(wb, "ThongKe_GoiThau.xlsx");
-            showFloatingNotice('Đã xuất file Excel!');
-        });
-    }
-
-
-    const dashboardBtn = document.getElementById('portal-dashboard-btn');
-    if (dashboardBtn) {
-        
-                }
-            }, 100);
-
-                if (typeof renderDashboard === 'function') {
-                    if (typeof Chart === 'undefined') {
-                        setTimeout(renderDashboard, 1000);
-                    } else {
-                        renderDashboard();
-                    }
-                }
-
-            } else {
-                ds.style.display = 'none';
-            }
-        });
-    }
-
-        on(closeNewPkgBtn, 'click', closeNewPackageModal);
+    on(closeNewPkgBtn, 'click', closeNewPackageModal);
         on(cancelNewPkgBtn, 'click', closeNewPackageModal);
         on(confirmNewPkgBtn, 'click', handleConfirmNewPackage);
         // Allow pressing Enter in the name input
