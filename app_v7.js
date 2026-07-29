@@ -2572,15 +2572,8 @@ function exportToTxt() {
                 if (localTemplates && localTemplates.length > 0) {
                     templates = localTemplates;
                     
-                    // Sort templates according to the STEP_ORDER array index!
-                    templates.sort((a, b) => {
-                        const idxA = STEP_ORDER.indexOf(a.stepNum);
-                        const idxB = STEP_ORDER.indexOf(b.stepNum);
-                        
-                        const valA = idxA !== -1 ? idxA : 999;
-                        const valB = idxB !== -1 ? idxB : 999;
-                        return valA - valB;
-                    });
+                    // Sort templates sequentially based on stepNum
+                    templates.sort((a, b) => a.stepNum - b.stepNum);
 
                     // Render recent packages in portal
                     renderPortalPackages();
