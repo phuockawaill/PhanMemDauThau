@@ -3094,50 +3094,206 @@ function exportToTxt() {
             if (pkgContainer)  pkgContainer.style.display  = 'none';
             if (ds)            ds.style.display            = 'none';
 
-            let us = document.getElementById('users-section');
+                        let us = document.getElementById('users-section');
             if (!us) {
+                // Initialize LocalStorage Data
+                window.appGroups = JSON.parse(localStorage.getItem('appGroups')) || [
+                    {id: 'admin', name: 'Quản trị viên (Admin)'}, 
+                    {id: 'user', name: 'Nhân viên'}
+                ];
+                window.appUsers = JSON.parse(localStorage.getItem('appUsers')) || [
+                    {username: 'admin', password: '123', displayName: 'Admin Tổng', groupId: 'admin'}
+                ];
+
+                window.saveAppUsers = function() { localStorage.setItem('appUsers', JSON.stringify(window.appUsers)); };
+                window.saveAppGroups = function() { localStorage.setItem('appGroups', JSON.stringify(window.appGroups)); };
+
                 us = document.createElement('div');
                 us.id = 'users-section';
-                us.style.cssText = 'padding:24px; color:var(--text-main);';
+                us.style.cssText = 'padding:24px; color:var(--text-main); height: 100%; display: flex; flex-direction: column;';
                 us.innerHTML = `
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
-                        <h2 style="margin:0;font-size:20px;">Quản lý Nhân sự</h2>
-                        <button id="add-user-btn" style="padding:10px 20px;border-radius:8px;border:none;background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:white;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;">
-                            <i data-lucide="user-plus" style="width:16px;height:16px;"></i> Thêm Tài khoản
-                        </button>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+                        <h2 style="margin:0;font-size:20px;">Quản lý Phân quyền & Nhân sự</h2>
                     </div>
-                    <div style="background:var(--bg-sidebar);border:1px solid var(--border-color);border-radius:12px;overflow:hidden;">
-                        <table style="width:100%;border-collapse:collapse;text-align:left;">
-                            <thead><tr style="border-bottom:1px solid var(--border-color);background:rgba(59,130,246,0.05);">
-                                <th style="padding:14px 16px;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);">Tên đăng nhập</th>
-                                <th style="padding:14px 16px;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);">Tên hiển thị</th>
-                                <th style="padding:14px 16px;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);">Quyền hạn</th>
-                                <th style="padding:14px 16px;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);">Hành động</th>
-                            </tr></thead>
-                            <tbody id="users-tbody"><tr><td colspan="4" style="padding:20px;text-align:center;color:var(--text-muted);">Đang tải...</td></tr></tbody>
-                        </table>
-                    </div>`;
+
+                    <!-- Tabs Header -->
+                    <div style="display:flex; gap:16px; margin-bottom: 24px; border-bottom: 1px solid var(--border-color);">
+                        <button id="tab-users-btn" style="padding:10px 16px; border:none; background:none; font-weight:600; color:#3b82f6; border-bottom:2px solid #3b82f6; cursor:pointer;">Danh sách Tài khoản</button>
+                        <button id="tab-groups-btn" style="padding:10px 16px; border:none; background:none; font-weight:600; color:var(--text-muted); cursor:pointer;">Phân nhóm Người dùng</button>
+                    </div>
+
+                    <!-- Tab: Users -->
+                    <div id="tab-users-content" style="display: block; flex: 1;">
+                        <div style="display:flex; justify-content:flex-end; margin-bottom: 16px;">
+                            <button id="add-user-btn" style="padding:8px 16px; border-radius:8px; border:none; background:linear-gradient(135deg,#3b82f6,#8b5cf6); color:white; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:8px;">
+                                <i data-lucide="user-plus" style="width:16px;height:16px;"></i> Thêm Tài khoản
+                            </button>
+                        </div>
+                        <div style="background:var(--bg-sidebar); border:1px solid var(--border-color); border-radius:12px; overflow:hidden;">
+                            <table style="width:100%; border-collapse:collapse; text-align:left;">
+                                <thead><tr style="border-bottom:1px solid var(--border-color); background:rgba(59,130,246,0.05);">
+                                    <th style="padding:14px 16px; font-size:12px; text-transform:uppercase; color:var(--text-muted);">Tên đăng nhập</th>
+                                    <th style="padding:14px 16px; font-size:12px; text-transform:uppercase; color:var(--text-muted);">Tên hiển thị</th>
+                                    <th style="padding:14px 16px; font-size:12px; text-transform:uppercase; color:var(--text-muted);">Thuộc Nhóm</th>
+                                    <th style="padding:14px 16px; font-size:12px; text-transform:uppercase; color:var(--text-muted);">Mật khẩu</th>
+                                    <th style="padding:14px 16px; font-size:12px; text-transform:uppercase; color:var(--text-muted);">Hành động</th>
+                                </tr></thead>
+                                <tbody id="users-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Groups -->
+                    <div id="tab-groups-content" style="display: none; flex: 1;">
+                        <div style="display:flex; justify-content:flex-end; margin-bottom: 16px;">
+                            <button id="add-group-btn" style="padding:8px 16px; border-radius:8px; border:none; background:linear-gradient(135deg,#10b981,#059669); color:white; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:8px;">
+                                <i data-lucide="users" style="width:16px;height:16px;"></i> Tạo Nhóm Mới
+                            </button>
+                        </div>
+                        <div style="background:var(--bg-sidebar); border:1px solid var(--border-color); border-radius:12px; overflow:hidden;">
+                            <table style="width:100%; border-collapse:collapse; text-align:left;">
+                                <thead><tr style="border-bottom:1px solid var(--border-color); background:rgba(16,185,129,0.05);">
+                                    <th style="padding:14px 16px; font-size:12px; text-transform:uppercase; color:var(--text-muted);">Mã Nhóm</th>
+                                    <th style="padding:14px 16px; font-size:12px; text-transform:uppercase; color:var(--text-muted);">Tên Nhóm</th>
+                                    <th style="padding:14px 16px; font-size:12px; text-transform:uppercase; color:var(--text-muted);">Thành viên</th>
+                                    <th style="padding:14px 16px; font-size:12px; text-transform:uppercase; color:var(--text-muted);">Hành động</th>
+                                </tr></thead>
+                                <tbody id="groups-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+                
                 const pm = document.querySelector('.portal-main') || document.querySelector('.portal-body');
                 if (pm) pm.insertBefore(us, pm.firstChild);
 
                 if (typeof lucide !== 'undefined') lucide.createIcons();
 
+                // TAB SWITCHING LOGIC
+                const btnUsers = document.getElementById('tab-users-btn');
+                const btnGroups = document.getElementById('tab-groups-btn');
+                const contentUsers = document.getElementById('tab-users-content');
+                const contentGroups = document.getElementById('tab-groups-content');
+
+                btnUsers.addEventListener('click', () => {
+                    btnUsers.style.color = '#3b82f6'; btnUsers.style.borderBottom = '2px solid #3b82f6';
+                    btnGroups.style.color = 'var(--text-muted)'; btnGroups.style.borderBottom = 'none';
+                    contentUsers.style.display = 'block';
+                    contentGroups.style.display = 'none';
+                    window.renderUsersTable();
+                });
+
+                btnGroups.addEventListener('click', () => {
+                    btnGroups.style.color = '#10b981'; btnGroups.style.borderBottom = '2px solid #10b981';
+                    btnUsers.style.color = 'var(--text-muted)'; btnUsers.style.borderBottom = 'none';
+                    contentGroups.style.display = 'block';
+                    contentUsers.style.display = 'none';
+                    window.renderGroupsTable();
+                });
+
+                // CREATE USER LOGIC
                 document.getElementById('add-user-btn').addEventListener('click', () => {
                     const un = prompt('Tên đăng nhập mới:'); if (!un) return;
-                    const pw = prompt('Mật khẩu:'); if (!pw) return;
-                    const dn = prompt('Tên hiển thị:') || un;
-                    const isAdmin = confirm('Cấp quyền Admin cho tài khoản này?');
-                    fetch('/api/users').then(r=>r.json()).then(d => {
-                        const users = d.users || [];
-                        if (users.find(u => u.username === un)) { alert('Tên đăng nhập đã tồn tại!'); return; }
-                        users.push({ username: un, password: pw, displayName: dn, role: isAdmin ? 'admin' : 'user' });
-                        fetch('/api/users', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({users}) })
-                            .then(() => window.renderUsersTable());
-                    });
+                    if (window.appUsers.find(u => u.username === un)) { alert('Tên đăng nhập đã tồn tại!'); return; }
+                    const pw = prompt('Mật khẩu:') || '123';
+                    const dn = prompt('Tên hiển thị (Tên nhân viên):') || un;
+                    
+                    let groupOptions = window.appGroups.map((g, i) => `${i+1}. ${g.name}`).join('\n');
+                    const gIdxStr = prompt(`Chọn nhóm cho User này (nhập số):\n${groupOptions}`, "2");
+                    let gIdx = parseInt(gIdxStr) - 1;
+                    if (isNaN(gIdx) || gIdx < 0 || gIdx >= window.appGroups.length) gIdx = 1;
+                    
+                    const gId = window.appGroups[gIdx].id;
+
+                    window.appUsers.push({ username: un, password: pw, displayName: dn, groupId: gId });
+                    window.saveAppUsers();
+                    window.renderUsersTable();
+                });
+
+                // CREATE GROUP LOGIC
+                document.getElementById('add-group-btn').addEventListener('click', () => {
+                    const gid = prompt('Nhập Mã nhóm (VD: ketoan, kithuat):'); if (!gid) return;
+                    if (window.appGroups.find(g => g.id === gid)) { alert('Mã nhóm đã tồn tại!'); return; }
+                    const gname = prompt('Tên Nhóm (VD: Phòng Kế Toán):') || gid;
+                    
+                    window.appGroups.push({ id: gid, name: gname });
+                    window.saveAppGroups();
+                    window.renderGroupsTable();
                 });
             }
+
             us.style.display = 'block'; // Ensure it's shown!
-            if (typeof window.renderUsersTable === 'function') window.renderUsersTable();
+            
+            // Define Render Functions inside global scope to be accessible
+            if (typeof window.renderUsersTable !== 'function') {
+                window.renderUsersTable = function() {
+                    const tbody = document.getElementById('users-tbody');
+                    if (!tbody) return;
+                    
+                    tbody.innerHTML = window.appUsers.map(u => {
+                        const group = window.appGroups.find(g => g.id === u.groupId);
+                        const groupName = group ? group.name : u.groupId;
+                        const isAd = u.groupId === 'admin';
+                        const badgeColor = isAd ? '#ef4444' : '#3b82f6';
+                        const badgeBg = isAd ? 'rgba(239,68,68,0.15)' : 'rgba(59,130,246,0.15)';
+                        
+                        return `
+                        <tr style="border-bottom:1px solid var(--border-color);">
+                            <td style="padding:14px 16px;font-weight:600;">${u.username}</td>
+                            <td style="padding:14px 16px;">${u.displayName}</td>
+                            <td style="padding:14px 16px;">
+                                <span style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;background:${badgeBg};color:${badgeColor};">
+                                    ${groupName}
+                                </span>
+                            </td>
+                            <td style="padding:14px 16px; font-family: monospace; color:var(--text-muted);">${u.password}</td>
+                            <td style="padding:14px 16px;">
+                                ${u.username !== 'admin' ? `<button onclick="window.deleteUser('${u.username}')" style="padding:6px 12px;border-radius:6px;border:none;background:rgba(239,68,68,0.1);color:#f87171;cursor:pointer;font-weight:600;">Xóa</button>` : '<span style="color:var(--text-muted);font-size:12px;">Được bảo vệ</span>'}
+                            </td>
+                        </tr>`;
+                    }).join('');
+                };
+
+                window.deleteUser = function(username) {
+                    if (!confirm(`Xóa tài khoản "${username}"?`)) return;
+                    window.appUsers = window.appUsers.filter(u => u.username !== username);
+                    window.saveAppUsers();
+                    window.renderUsersTable();
+                };
+
+                window.renderGroupsTable = function() {
+                    const tbody = document.getElementById('groups-tbody');
+                    if (!tbody) return;
+                    
+                    tbody.innerHTML = window.appGroups.map(g => {
+                        const count = window.appUsers.filter(u => u.groupId === g.id).length;
+                        return `
+                        <tr style="border-bottom:1px solid var(--border-color);">
+                            <td style="padding:14px 16px;font-weight:600;color:#10b981;">${g.id}</td>
+                            <td style="padding:14px 16px;font-weight:500;">${g.name}</td>
+                            <td style="padding:14px 16px;">${count} người</td>
+                            <td style="padding:14px 16px;">
+                                ${g.id !== 'admin' && g.id !== 'user' ? `<button onclick="window.deleteGroup('${g.id}')" style="padding:6px 12px;border-radius:6px;border:none;background:rgba(239,68,68,0.1);color:#f87171;cursor:pointer;font-weight:600;">Xóa</button>` : '<span style="color:var(--text-muted);font-size:12px;">Mặc định</span>'}
+                            </td>
+                        </tr>`;
+                    }).join('');
+                };
+
+                window.deleteGroup = function(gid) {
+                    const count = window.appUsers.filter(u => u.groupId === gid).length;
+                    if (count > 0) {
+                        alert(`Không thể xóa nhóm này vì đang có ${count} người dùng thuộc nhóm!`);
+                        return;
+                    }
+                    if (!confirm(`Xóa nhóm "${gid}"?`)) return;
+                    window.appGroups = window.appGroups.filter(g => g.id !== gid);
+                    window.saveAppGroups();
+                    window.renderGroupsTable();
+                };
+            }
+
+            window.renderUsersTable();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         });;
     }, 600);
 
