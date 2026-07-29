@@ -2246,44 +2246,47 @@ function exportToTxt() {
 
     if (menuLibrary && menuDashboard) {
         menuLibrary.addEventListener('click', () => {
+            const menuUsers = document.getElementById('menu-users');
+            if(menuUsers) menuUsers.classList.remove('active');
             menuLibrary.classList.add('active');
             menuDashboard.classList.remove('active');
             
-            // Show library components
+            const portalToolbar = document.querySelector('.portal-toolbar');
+            const packagesContainer = document.getElementById('packages-container');
+            const ds = document.getElementById('dashboard-section');
+            const us = document.getElementById('users-section');
+            
             if (portalToolbar) portalToolbar.style.display = 'flex';
-            if (packagesContainer) packagesContainer.style.display = 'grid'; // it uses grid usually
-            
-            // Show side filters
-            // filterSections.forEach(s => s.style.display = 'block');
-            
-            // Hide dashboard
-            let ds = document.getElementById('dashboard-section');
+            if (packagesContainer) packagesContainer.style.display = 'grid';
             if (ds) ds.style.display = 'none';
-        });
+            if (us) us.style.display = 'none';
+        });;
 
         menuDashboard.addEventListener('click', () => {
+            const menuUsers = document.getElementById('menu-users');
+            if(menuUsers) menuUsers.classList.remove('active');
             menuDashboard.classList.add('active');
             menuLibrary.classList.remove('active');
             
-            // Hide library components
+            const portalToolbar = document.querySelector('.portal-toolbar');
+            const packagesContainer = document.getElementById('packages-container');
+            const us = document.getElementById('users-section');
+            
             if (portalToolbar) portalToolbar.style.display = 'none';
             if (packagesContainer) packagesContainer.style.display = 'none';
+            if (us) us.style.display = 'none';
             
-            // Hide side filters (they are not relevant for dashboard)
-            // filterSections.forEach(s => s.style.display = 'none');
-            
-            // Show dashboard
             let ds = ensureDashboardSection();
             ds.style.display = 'block';
             
             if (typeof renderDashboard === 'function') {
                 if (typeof Chart === 'undefined') {
-                    setTimeout(renderDashboard, 1000);
+                    setTimeout(renderDashboard, 500);
                 } else {
                     renderDashboard();
                 }
             }
-        });
+        });;
     }
 
     if (typeof XLSX === 'undefined') {
@@ -3083,12 +3086,13 @@ function exportToTxt() {
             const pkgContainer  = document.getElementById('packages-container');
             const ds            = document.getElementById('dashboard-section');
 
-            [menuLibrary, menuDashboard].forEach(m => m && m.classList.remove('active'));
+            if(menuLibrary) menuLibrary.classList.remove('active');
+            if(menuDashboard) menuDashboard.classList.remove('active');
             menuUsers.classList.add('active');
 
             if (portalToolbar) portalToolbar.style.display = 'none';
             if (pkgContainer)  pkgContainer.style.display  = 'none';
-            if (ds)            ds.style.display             = 'none';
+            if (ds)            ds.style.display            = 'none';
 
             let us = document.getElementById('users-section');
             if (!us) {
@@ -3116,7 +3120,7 @@ function exportToTxt() {
                 const pm = document.querySelector('.portal-main') || document.querySelector('.portal-body');
                 if (pm) pm.insertBefore(us, pm.firstChild);
 
-                lucide.createIcons();
+                if (typeof lucide !== 'undefined') lucide.createIcons();
 
                 document.getElementById('add-user-btn').addEventListener('click', () => {
                     const un = prompt('Tên đăng nhập mới:'); if (!un) return;
@@ -3132,9 +3136,9 @@ function exportToTxt() {
                     });
                 });
             }
-            us.style.display = 'block';
-            window.renderUsersTable();
-        });
+            us.style.display = 'block'; // Ensure it's shown!
+            if (typeof window.renderUsersTable === 'function') window.renderUsersTable();
+        });;
     }, 600);
 
     window.renderUsersTable = function() {
