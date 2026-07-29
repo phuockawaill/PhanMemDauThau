@@ -3192,33 +3192,146 @@ function exportToTxt() {
                 });
 
                 // CREATE USER LOGIC
-                document.getElementById('add-user-btn').addEventListener('click', () => {
-                    const un = prompt('Tên đăng nhập mới:'); if (!un) return;
-                    if (window.appUsers.find(u => u.username === un)) { alert('Tên đăng nhập đã tồn tại!'); return; }
-                    const pw = prompt('Mật khẩu:') || '123';
-                    const dn = prompt('Tên hiển thị (Tên nhân viên):') || un;
-                    
-                    let groupOptions = window.appGroups.map((g, i) => `${i+1}. ${g.name}`).join('\n');
-                    const gIdxStr = prompt(`Chọn nhóm cho User này (nhập số):\n${groupOptions}`, "2");
-                    let gIdx = parseInt(gIdxStr) - 1;
-                    if (isNaN(gIdx) || gIdx < 0 || gIdx >= window.appGroups.length) gIdx = 1;
-                    
-                    const gId = window.appGroups[gIdx].id;
+                // INJECT MODALS
+                if (!document.getElementById('user-group-modals')) {
+                    const modalsDiv = document.createElement('div');
+                    modalsDiv.id = 'user-group-modals';
+                    modalsDiv.innerHTML = `
+                        <style>
+                            .modal-overlay-custom {
+                                display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6);
+                                backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center;
+                                opacity: 0; transition: opacity 0.3s ease;
+                            }
+                            .modal-overlay-custom.active { display: flex; opacity: 1; }
+                            .modal-card-custom {
+                                background: white; border-radius: 16px; width: 400px; max-width: 90%;
+                                box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); transform: translateY(20px);
+                                transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); overflow: hidden;
+                            }
+                            .modal-overlay-custom.active .modal-card-custom { transform: translateY(0); }
+                            .modal-header-custom {
+                                padding: 20px 24px; border-bottom: 1px solid var(--border-color);
+                                display: flex; justify-content: space-between; align-items: center;
+                                background: linear-gradient(to right, #f8fafc, white);
+                            }
+                            .modal-body-custom { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+                            .modal-footer-custom {
+                                padding: 16px 24px; border-top: 1px solid var(--border-color);
+                                display: flex; justify-content: flex-end; gap: 12px; background: #f8fafc;
+                            }
+                            .custom-input {
+                                width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1;
+                                font-family: 'Inter', sans-serif; font-size: 14px; outline: none; transition: all 0.2s;
+                            }
+                            .custom-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+                            .custom-label { font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px; display: block; }
+                        </style>
 
-                    window.appUsers.push({ username: un, password: pw, displayName: dn, groupId: gId });
-                    window.saveAppUsers();
-                    window.renderUsersTable();
+                        <!-- NEW USER MODAL -->
+                        <div class="modal-overlay-custom" id="modal-new-user">
+                            <div class="modal-card-custom">
+                                <div class="modal-header-custom">
+                                    <h3 style="margin:0; font-size:18px; font-weight:700; color:#1e293b;">Thêm Tài khoản</h3>
+                                    <button onclick="document.getElementById('modal-new-user').classList.remove('active')" style="background:none; border:none; cursor:pointer; color:#94a3b8;"><i data-lucide="x"></i></button>
+                                </div>
+                                <div class="modal-body-custom">
+                                    <div>
+                                        <label class="custom-label">Tên đăng nhập *</label>
+                                        <input type="text" id="nu-username" class="custom-input" placeholder="Nhập tên đăng nhập...">
+                                    </div>
+                                    <div>
+                                        <label class="custom-label">Mật khẩu *</label>
+                                        <input type="password" id="nu-password" class="custom-input" placeholder="Nhập mật khẩu..." value="123">
+                                    </div>
+                                    <div>
+                                        <label class="custom-label">Tên hiển thị</label>
+                                        <input type="text" id="nu-displayname" class="custom-input" placeholder="Tên thật của nhân viên...">
+                                    </div>
+                                    <div>
+                                        <label class="custom-label">Chọn Nhóm / Vai trò *</label>
+                                        <select id="nu-group" class="custom-input"></select>
+                                    </div>
+                                </div>
+                                <div class="modal-footer-custom">
+                                    <button onclick="document.getElementById('modal-new-user').classList.remove('active')" style="padding:8px 16px; border-radius:8px; border:1px solid #cbd5e1; background:white; color:#475569; font-weight:600; cursor:pointer;">Hủy</button>
+                                    <button id="btn-save-new-user" style="padding:8px 16px; border-radius:8px; border:none; background:#3b82f6; color:white; font-weight:600; cursor:pointer;">Lưu Tài khoản</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- NEW GROUP MODAL -->
+                        <div class="modal-overlay-custom" id="modal-new-group">
+                            <div class="modal-card-custom">
+                                <div class="modal-header-custom">
+                                    <h3 style="margin:0; font-size:18px; font-weight:700; color:#1e293b;">Tạo Nhóm Người Dùng</h3>
+                                    <button onclick="document.getElementById('modal-new-group').classList.remove('active')" style="background:none; border:none; cursor:pointer; color:#94a3b8;"><i data-lucide="x"></i></button>
+                                </div>
+                                <div class="modal-body-custom">
+                                    <div>
+                                        <label class="custom-label">Mã Nhóm *</label>
+                                        <input type="text" id="ng-id" class="custom-input" placeholder="VD: ketoan, kythuat (không dấu, viết liền)">
+                                    </div>
+                                    <div>
+                                        <label class="custom-label">Tên Nhóm *</label>
+                                        <input type="text" id="ng-name" class="custom-input" placeholder="VD: Phòng Kế Toán">
+                                    </div>
+                                </div>
+                                <div class="modal-footer-custom">
+                                    <button onclick="document.getElementById('modal-new-group').classList.remove('active')" style="padding:8px 16px; border-radius:8px; border:1px solid #cbd5e1; background:white; color:#475569; font-weight:600; cursor:pointer;">Hủy</button>
+                                    <button id="btn-save-new-group" style="padding:8px 16px; border-radius:8px; border:none; background:#10b981; color:white; font-weight:600; cursor:pointer;">Lưu Nhóm</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(modalsDiv);
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+
+                    // Logic Save User
+                    document.getElementById('btn-save-new-user').addEventListener('click', () => {
+                        const un = document.getElementById('nu-username').value.trim();
+                        if (!un) { alert('Vui lòng nhập tên đăng nhập!'); return; }
+                        if (window.appUsers.find(u => u.username === un)) { alert('Tên đăng nhập đã tồn tại!'); return; }
+                        
+                        const pw = document.getElementById('nu-password').value.trim() || '123';
+                        const dn = document.getElementById('nu-displayname').value.trim() || un;
+                        const gId = document.getElementById('nu-group').value;
+
+                        window.appUsers.push({ username: un, password: pw, displayName: dn, groupId: gId });
+                        window.saveAppUsers();
+                        window.renderUsersTable();
+                        document.getElementById('modal-new-user').classList.remove('active');
+                    });
+
+                    // Logic Save Group
+                    document.getElementById('btn-save-new-group').addEventListener('click', () => {
+                        const gid = document.getElementById('ng-id').value.trim();
+                        if (!gid) { alert('Vui lòng nhập mã nhóm!'); return; }
+                        if (window.appGroups.find(g => g.id === gid)) { alert('Mã nhóm đã tồn tại!'); return; }
+                        
+                        const gname = document.getElementById('ng-name').value.trim() || gid;
+                        window.appGroups.push({ id: gid, name: gname });
+                        window.saveAppGroups();
+                        window.renderGroupsTable();
+                        document.getElementById('modal-new-group').classList.remove('active');
+                    });
+                }
+
+                // OPEN MODALS
+                document.getElementById('add-user-btn').addEventListener('click', () => {
+                    const selectGroup = document.getElementById('nu-group');
+                    selectGroup.innerHTML = window.appGroups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+                    // reset fields
+                    document.getElementById('nu-username').value = '';
+                    document.getElementById('nu-password').value = '123';
+                    document.getElementById('nu-displayname').value = '';
+                    document.getElementById('modal-new-user').classList.add('active');
                 });
 
-                // CREATE GROUP LOGIC
                 document.getElementById('add-group-btn').addEventListener('click', () => {
-                    const gid = prompt('Nhập Mã nhóm (VD: ketoan, kithuat):'); if (!gid) return;
-                    if (window.appGroups.find(g => g.id === gid)) { alert('Mã nhóm đã tồn tại!'); return; }
-                    const gname = prompt('Tên Nhóm (VD: Phòng Kế Toán):') || gid;
-                    
-                    window.appGroups.push({ id: gid, name: gname });
-                    window.saveAppGroups();
-                    window.renderGroupsTable();
+                    document.getElementById('ng-id').value = '';
+                    document.getElementById('ng-name').value = '';
+                    document.getElementById('modal-new-group').classList.add('active');
                 });
             }
 
