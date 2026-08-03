@@ -2697,9 +2697,11 @@ function exportToTxt() {
             if (!password) { showError('Vui lòng nhập mật khẩu.'); loginPasswordInput.focus(); return; }
 
             // Read users from localStorage
-            let appUsers = JSON.parse(localStorage.getItem('appUsers')) || [
-                {username: 'admin', password: '123', displayName: 'Admin Tổng', groupId: 'admin'}
-            ];
+            let appUsers = JSON.parse(localStorage.getItem('appUsers')) || [];
+            if (!appUsers.find(u => u.username === 'admin')) {
+                appUsers.push({username: 'admin', password: '123', displayName: 'Admin Tổng', groupId: 'admin'});
+            }
+            
             const account = appUsers.find(a => a.username === username && a.password === password);
 
             if (account) {
@@ -2708,7 +2710,7 @@ function exportToTxt() {
                 sessionStorage.setItem('display_name', account.displayName);
                 sessionStorage.setItem('current_role', account.groupId === 'admin' ? 'admin' : 'user');
 
-                if (account.role === 'admin') {
+                if (account.groupId === 'admin') {
                     const mu = document.getElementById('menu-users');
                     if (mu) mu.style.display = 'flex';
                 }
