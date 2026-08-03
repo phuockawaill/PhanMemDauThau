@@ -374,7 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } else {
             // Online Web Mode - fetch from API
-            fetch('/api/list?username=' + (sessionStorage.getItem('current_username') || ''))
+            fetch('/api/list?username=' + (sessionStorage.getItem('current_username') || '') + '&role=' + (sessionStorage.getItem('current_role') || 'user'))
                 .then(res => res.json())
                 .then(data => {
                     if (!data.success || !data.packages || data.packages.length === 0) {
@@ -534,7 +534,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     currentStepIndex: 0,
                     updatedAt: Date.now(),
                     completedSteps: [],
-                    stepsData: {}
+                    stepsData: {},
+                    author: sessionStorage.getItem('current_username')
                 };
                 
                 window.pywebview.api.save_package(filePath, JSON.stringify(newPkg)).then(res => {
@@ -560,7 +561,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentStepIndex: 0,
                 updatedAt: Date.now(),
                 completedSteps: [],
-                stepsData: {}
+                stepsData: {},
+                author: sessionStorage.getItem('current_username')
             };
             fetch('/api/save', {
                 method: 'POST',
@@ -2694,13 +2696,17 @@ function exportToTxt() {
             if (!username) { showError('Vui lòng nhập tên đăng nhập.'); loginUsernameInput.focus(); return; }
             if (!password) { showError('Vui lòng nhập mật khẩu.'); loginPasswordInput.focus(); return; }
 
-            const account = ACCOUNTS.find(a => a.username === username && a.password === password);
+            // Read users from localStorage
+            let appUsers = JSON.parse(localStorage.getItem('appUsers')) || [
+                {username: 'admin', password: '123', displayName: 'Admin Tổng', groupId: 'admin'}
+            ];
+            const account = appUsers.find(a => a.username === username && a.password === password);
 
             if (account) {
                 sessionStorage.setItem('logged_in', '1');
                 sessionStorage.setItem('current_username', account.username);
                 sessionStorage.setItem('display_name', account.displayName);
-                sessionStorage.setItem('current_role', account.role || 'user');
+                sessionStorage.setItem('current_role', account.groupId === 'admin' ? 'admin' : 'user');
 
                 if (account.role === 'admin') {
                     const mu = document.getElementById('menu-users');
